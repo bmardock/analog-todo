@@ -1,18 +1,18 @@
 ![](analog-bg.png)
-Summary:
+#### Summary:
 Managing a number of competing priorities between work and life becomes overwhelming over time. 
 When tasked to manage other people's projects and peoples career growth the process becomes unmanagable without proper tools.
 There are a number of tools on the market but none of them focus on making the process stick.
 The time to organize the todo list, reflect on what needs to be done and the motivation to keep on is usually neglected.
 Add triggers to move the user into the right direction and keep them motivated to reach some of their long term goals.
 
-Problem: Todo lists by themselves are ineffective for setting and maintaining goals. 
+#### Problem: Todo lists by themselves are ineffective for setting and maintaining goals. 
 
-Solution: Create a habit forming cadence for planning, prioritization, execution and retrospection.
+#### Solution: Create a habit forming cadence for planning, prioritization, execution and retrospection.
 
-Create a minimalistic todo app based on the following design:
+- Create a minimalistic todo app based on the following design:
 [analog todo cards](https://ugmonk.com/blogs/journal/analog-the-simplest-productivity-system)
-Create supplimental workflows to plan and review tasks.
+- Create supplimental workflows to plan and review todo list for the day.
 
 
 ## V1. Using the task list:
