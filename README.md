@@ -1,11 +1,7 @@
-![](analog-todo.png)
+![](analog-bg.png)
 
 Create a minimalistic todo app based on the following design:
 [analog todo cards](https://ugmonk.com/blogs/journal/analog-the-simplest-productivity-system)
-
-
-## V0. Test Workflow Assumptions
-[POC](https://docs.google.com/spreadsheets/d/1_bRvWPO-jK3O2vjLOvslSsanaz4wq_KqrD4UpAhP36s/edit#gid=128145654)
 
 ## V1. Using the task list:
 ```
