@@ -44,7 +44,7 @@ Use this list to help you fill out your Today cards.
 #### Someday (year)
 Capture ideas, aspirations, and goals that you would like to accomplish someday.
 
-# Tasks:
+##### Tasks:
 - Create an up to date task list for today 
 - Update task signals throughout the day
 - End of day Review days progress
