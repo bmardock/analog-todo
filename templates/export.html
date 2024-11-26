@@ -1,0 +1,26 @@
+<main>
+  <div class="status">
+    <p id="status-message">Enter code and toggle the switch to connect.</p>
+  </div>
+    <div class="code-container">
+        <input type="tel" maxlength="7" id="code-input" pattern="[0-9]{3}-[0-9]{3}"placeholder="123-456" />
+        <button id="generateButton">&#8634;</button>
+    </div>
+    <div class="controls">
+            <label class="switch">
+          <input type="checkbox" id="connectButton" disabled>
+          <span class="slider"></span>
+        </label>
+        <button id="syncButton" disabled>Sync</button>
+    </div>
+    <div id="userCount"></div>
+	<textarea id="msgs"></textarea>
+    <textarea id="json"></textarea>
+    <div class="controls">
+        <button id="showData">Show Data</button>
+        <button id="saveData" disabled>Save Data</button>
+    </div>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.0.4/pako.min.js"></script>
+<script src="//shopboardwalkvintage.com/js/socket.io.min.js"></script>
+<script src="./js/export.js?cacheBust=3"></script>

@@ -1,0 +1,223 @@
+  <card class="front active">
+    <header>
+      <div class="listType">Next</div>
+      <input type="hidden" name="listType" value="Next"/>
+      <input class="picker" name="title" type="text" placeholder=""/>
+      <div class="cardSignal radio-group">
+        <input type="checkbox" name="signal1" class="radio-button">
+        <input type="checkbox" name="signal2" class="radio-button">
+        <input type="checkbox" name="signal3" class="radio-button">
+      </div>
+    </header>
+    <todoList>
+      <todoItem data-position="0" >
+        <div class="dropdown" tabindex="0">
+          <button class="signal"></button>
+          <div class="dropdown-content">
+            <a href="#"><i class="signal"></i>empty</a>
+            <a href="#"><i class="signal in-progress"></i>in-progress</a>
+            <a href="#"><i class="signal completed"></i>completed</a>
+            <a href="#"><i class="signal appointment"></i>appointment</a>
+            <a href="#"><i class="signal delegated"></i>delegated</a>
+          </div>
+        </div>
+        <input type="text" tabindex="0"/>
+        <select class="copy hidden">
+          <option></option>
+          <option>Today</option>
+          <option>Next</option>
+          <option>Someday</option>
+        </select>
+      </todoItem>
+    </todoList>
+    <button class="flip"></button>
+    <div class="archive-button">
+      <input name="archive" id="archive" type="checkbox" class="archive-checkbox" />
+      <label for="archive" class="archive" title="Archive Card"></label>
+    </div>
+    <div class="recent">
+      <h2>Recent:</h2>
+      <div id="recent_list" class="list">
+        <div class="circle" data-text="">+</div>
+      </div>
+    </div>
+    <div class="archive">
+      <h2 class="archive-header">Archives:</h2>
+      <div id="archive_list" class="list"></div>
+    </div>
+  </card>
+  <card class="back">
+    <main>
+      <p>Capture your thoughts, ideas, and notes here.</p>
+      <textarea name="braindump"/></textarea>
+    </main>
+    <button class="flip"></button>
+  </card>
+<script src="./js/cards.js?cacheBust"></script>
+<script>
+(function (){
+  //set the list of todos
+  const mgmt = TodoApp.cardManager;
+  //mgmt.reinit();
+  (function (){ 
+    const todoList = document.querySelector('todoList');
+    const template = todoList.firstElementChild;
+    const fragment = document.createDocumentFragment();
+    for (let x = 1; x < 10; x++) {
+        const clone = template.cloneNode(true);
+        clone.setAttribute('data-position', x);
+        clone.querySelector('input').tabIndex = x;
+        fragment.appendChild(clone);
+    }
+    todoList.appendChild(fragment);
+  })();
+
+  // handle next list click
+  document.querySelectorAll('.list').forEach(el => el.addEventListener('click', ({target}) => {
+    if(target.className == 'circle'){
+      document.querySelectorAll('.list .on').forEach(el => el.classList.remove('on'));
+      let name = target.getAttribute('data-text');
+      if(name == 'Add New'){
+        console.log('show new list');
+        name = '';
+        document.querySelector('[name=title]').readonly = false;
+      }
+      document.querySelector('[name=title]').value = name;
+      const url = new URL(window.location);
+      url.searchParams.set('name', name);
+      window.history.pushState({}, '', url);
+      mgmt.fetchAndRender();
+    }
+  }) );
+  //toggle archive list
+  document.querySelector('.archive-header').addEventListener('click', ({target}) => {
+      target.parentNode.classList.toggle('open');
+  })
+  //archive button
+  document.querySelector('#archive').addEventListener('change', ({target}) => {
+    console.log('changes');
+    mgmt.saveAndRender();
+    mgmt.recentList();
+  });
+
+  //set Next look
+  document.body.className = 'next';
+  document.querySelector('[name=listType]').value='Next';
+  document.querySelector('[name=title]').placeholder = new Date().toLocaleString('default', { month: 'long' });
+    //name change
+  document.querySelector('[name=title]').addEventListener('change', async ({ target }) => {
+      console.log('Original Value:', target.value);
+      try {
+          // Get the unique card name asynchronously
+          const uniqueName = await mgmt.getUniqueCardName(target.value);
+          console.log('Unique Name:', uniqueName);
+          // Update the input field with the unique name
+          target.value = uniqueName;
+      } catch (error) {
+          console.error('Error generating unique card name:', error);
+      }
+  });
+  //todoList change
+  document.querySelector('todoList').addEventListener('change', ({target}) => {
+    console.log('changes');
+    mgmt.saveAndRender();
+    mgmt.recentList();
+  });
+  document.querySelector('todoList').addEventListener("click", (e) => {
+        e.preventDefault();
+        const anchor = e.target.closest('a');
+        const dropdownContent = e.target.closest('.dropdown-content');
+        if (anchor && dropdownContent) {
+            console.log('dropdown select');
+            const selection = anchor.textContent.trim();
+            const button = dropdownContent.parentNode.querySelector('button');
+            if (button) {
+                button.className = `signal ${selection}`;
+                button.value = selection;
+            }
+            dropdownContent.parentNode.blur();
+            anchor.blur();
+            mgmt.saveAndRender();
+        }
+  });
+  //select entire todo item
+  document.querySelector('todoList').addEventListener("focusin", ({ target }) => {
+    if (target.matches('input')){
+      target.setSelectionRange(0, target.value.length);
+      target.addEventListener('keydown', 
+        function handleKeydown(event) {
+          if (event.key === 'Enter') {
+            console.log('Enter button clicked');
+            const inputs = Array.from(document.querySelector('todoList').querySelectorAll('input'));
+            const currentIndex = inputs.indexOf(target);
+            // Find the next input in the list, or loop back to the first one
+            const nextInput = inputs[currentIndex + 1] || inputs[0];
+            nextInput.focus(); // Move focus to the next input
+            target.removeEventListener('keydown', handleKeydown); // Clean up the event listener
+          }
+        }
+      );
+    }
+  });
+
+  const cardSignals = document.querySelector(".cardSignal");
+  cardSignals.addEventListener("change", mgmt.saveAndRender);
+
+  const brainInput = document.querySelector("textarea[name=braindump]");
+  brainInput.addEventListener("focusout", mgmt.saveAndRender);
+
+  const flippers = document.querySelectorAll(".flip");
+  flippers[0].addEventListener("click", () => { changeContent(1); });
+  flippers[1].addEventListener("click", () => { changeContent(-1); });
+
+  let touchStartX = 0;
+  let touchEndX = 0;
+
+  document.addEventListener('touchstart', event => { 
+    touchStartX = event.changedTouches[0].screenX; 
+  });
+  document.addEventListener('touchend', event => { 
+    touchEndX = event.changedTouches[0].screenX; 
+    const swipeThreshold = 150;
+    if (touchEndX > touchStartX + swipeThreshold) {
+      console.log("Swiped left to right");
+      changeContent(-1);
+    }
+    else if (touchStartX > touchEndX + swipeThreshold) {
+      console.log("Swiped right to left");
+      changeContent(1);
+    }
+  });
+
+  // Attach event listeners on keys
+  document.addEventListener('keydown', (e) => {
+      // Check if the focused element is an input, textarea, or contenteditable
+      const activeElement = document.activeElement;
+      const isInputFocused = activeElement.tagName === 'INPUT' || 
+                             activeElement.tagName === 'TEXTAREA' || 
+                             activeElement.isContentEditable;
+      if (!isInputFocused) {
+          if (e.key === 'ArrowLeft') {
+              changeContent(-1);
+          }
+          if (e.key === 'ArrowRight') {
+              changeContent(1);
+          }
+      }
+  });
+
+  const changeContent = (direction) => {
+    // Get all cards
+    const cards = document.querySelectorAll('card');
+    // Find the currently active card
+    const activeIndex = Array.from(cards).findIndex(card => card.classList.contains('active'));
+    // Remove the active class from the current active card
+    if (activeIndex !== -1) cards[activeIndex].classList.remove('active');
+    // Calculate the new index (wrap around if out of bounds)
+    const newIndex = (activeIndex + direction + cards.length) % cards.length;
+    // Set the new card as active
+    cards[newIndex].classList.add('active');
+  };
+
+})();
+</script>

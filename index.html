@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="ScreenOrientation" content="autoRotate:disabled">
+    <link rel="manifest" href="/todo/manifest.json">
+    <link
+    rel="preload"
+    href="https://fonts.googleapis.com/css?family=Caveat&display=swap"
+    as="style"
+    onload="this.onload=null;this.rel='stylesheet'"/>
+    <noscript>
+        <link
+            href="https://fonts.googleapis.com/css?family=Caveat&display=swap"
+            rel="stylesheet"
+            type="text/css"
+        />
+    </noscript>
+    <link rel="stylesheet" href="/todo/todo.css?cacheBust=1">
+    <script>
+        document.head.appendChild(Object.assign(document.createElement('script'), { src: `./js/database.js?cacheBust=${Date.now()}` }));
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div id="content"></div>
+        <footer>
+            <ul>
+            <li class="goal"><a href="#goal">Goal</a></li>
+            <li class="calendar"><a href="#calendar">Cal</a></li>
+            <li class="todo"><a href="#todo">Todo</a></li>
+            <!-- li class="export"><a href="#export">Sync</a></li>
+            <li class="info"><a href="#info">Info</a></li -->
+            <li class="next"><a href="#next">Next</a></li>
+            <li class="someday"><a href="#someday">Someday</a></li>
+            </ul>
+        </footer>
+    </div>
+    <!-- script src="https://cdnjs.cloudflare.com/ajax/libs/nosleep/0.12.0/NoSleep.min.js"></script -->
+    <script>
+        /* Function to enable NoSleep
+        function enableNoSleep() {
+            const noSleep = new NoSleep();
+            noSleep.enable();
+            alert('Screen will stay awake while the app is open.');
+        }
+        document.querySelector('footer .todo a').addEventListener('click', ({target}) => {
+            target.style.color='red';
+            //enableNoSleep();
+            //preventSleep();
+            if (document.documentElement.requestFullscreen) {
+                //document.documentElement.requestFullscreen();
+            }
+        }, { once: true });
+        */
+
+        // Define routes and corresponding template files
+        const routes = {
+            blank: 'templates/blank.html',
+            goal: 'templates/goal.html',
+            todo: 'templates/todo.html',
+            calendar: 'templates/calendar.html',
+            export: 'templates/export.html',
+            info: 'templates/info.html',
+            qrcode: 'templates/qrcode.html',
+            next: 'templates/next.html',
+            someday: 'templates/someday.html'
+        };
+
+        async function loadScriptsSequentially(scripts) {
+            for (const script of scripts) {
+                await new Promise((resolve, reject) => {
+                    const newScript = document.createElement('script');
+                    
+                    // If it's an external script, set the source and load it
+                    if (script.src) {
+                        const cacheBust = `cacheBust=${Date.now()}`;
+                        const separator = script.src.includes('?') ? '&' : '?';
+                        newScript.src = `${script.src}${separator}${cacheBust}`;
+                        newScript.async = false; // Ensure script executes in order
+                        newScript.onload = resolve; // Resolve the promise when loaded
+                        newScript.onerror = reject; // Reject if there's an error
+                    } else {
+                        // For inline scripts, set the content and resolve immediately
+                        newScript.textContent = script.textContent;
+                        resolve();
+                    }
+
+                    document.body.appendChild(newScript);
+                });
+            }
+        }
+
+        // Function to load the template based on the current route
+        function loadRoute() {
+            // Get the current route from the hash, default to 'home'
+            //const route = location.pathname.split('/').slice(-1) || 'todo';
+            const route = location.hash.slice(1) || 'todo';
+            const templatePath = routes[route];
+            //window.history.pushState({}, '', `/todo/#${route}`);
+            document.querySelector('body').className = '';
+            // Fetch and display the template content
+            if (templatePath) {
+                fetch(templatePath)
+                    .then(response => response.ok ? response.text() : 'Page not found')
+                    .then(html => {
+                        document.getElementById('content').innerHTML = html;
+                        document.documentElement.className = route;
+
+                        // Create a temporary div to parse and extract script elements
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = html;
+                        const scripts = Array.from(tempDiv.querySelectorAll('script'));
+
+                        // Load each script sequentially
+                        loadScriptsSequentially(scripts)
+                            .then(() => {
+                                console.log('All scripts loaded in sequence');
+                                // Optional: Call any functions or setup that depend on these scripts
+                            })
+                            .catch(error => console.error('Error loading script:', error));
+                    })
+                    .catch(error => console.error('Error loading page:', error));
+            } else {
+                document.getElementById('content').innerHTML = 'Page not found';
+            }
+        }
+        function trigger(eventName, detail = {}) {
+            const event = new CustomEvent(eventName, { detail });
+            document.dispatchEvent(event);
+        }
+
+        // Event listener for hash changes
+        window.addEventListener('hashchange', loadRoute);
+        document.querySelector('footer').addEventListener('click', ({target}) => {
+            const link = target.closest('a').href;
+            if (link) {
+                //remove any query params
+                const route = link.split('#').slice(-1)[0];
+                window.history.pushState({}, '', `/todo/#${route}`); // Update the URL
+                window.dispatchEvent(new Event("hashchange"));
+            }
+        });
+        // Load the initial route
+        loadRoute();
+    </script>
+</body>
+</html>
