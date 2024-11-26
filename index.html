@@ -138,9 +138,13 @@
         document.querySelector('footer').addEventListener('click', ({target}) => {
             const link = target.closest('a').href;
             if (link) {
-                //remove any query params
                 const route = link.split('#').slice(-1)[0];
-                window.history.pushState({}, '', `/todo/#${route}`); // Update the URL
+                //remove any query params
+                const currentUrl = window.location;
+                // Remove query parameters and keep only the path
+                const newUrl = currentUrl.origin + currentUrl.pathname + "#" + route;
+                // Update the URL without reloading the page
+                window.history.pushState(null, '', newUrl);
                 window.dispatchEvent(new Event("hashchange"));
             }
         });
