@@ -26,7 +26,7 @@
     const databaseOpen = (callback) => {
         console.log('starting db');
         // Open a database, specify the name and version
-        var version = 23;
+        var version = 25;
         var request = indexedDB.open('todos', version);
         // Run migrations if necessary
         request.onupgradeneeded = (e) => {
@@ -60,14 +60,13 @@
         {
             let store;
             if (!db.objectStoreNames.contains('todo')) {
-                store = db.createObjectStore('todo', { keyPath: ['date', 'type'] }); // Composite key
+                store = db.createObjectStore('todo', { keyPath: 'date' }); // Composite key
                 console.log("Object store 'todo' created.");
             } else {
                 store = tx.objectStore('todo');
             }
             ensureIndexes(store, [
-                { name: 'type_date', keyPath: ['date', 'type'], options: { unique: true } },
-                { name: 'date', keyPath: 'date', options: { unique: false } }
+                { name: 'date', keyPath: 'date', options: { unique: true } }
             ]);
         }
         // 'next' store

@@ -66,7 +66,7 @@
     titleInput.value = name;
     titleInput.readOnly = !!name;
     //hide archive button if empty
-    document.querySelector('.archive-button').style.display = name ? 'block' : 'none';
+    document.querySelector('.archive-button').classList.toggle('on', !!name);
     document.getElementById('archive').checked = !!archived;
     document.querySelector(`[data-text="${name}"]`)?.classList.add('on');
     renderTodos(data);
@@ -139,6 +139,7 @@
   // Initialization function
   const init = () => {
     console.log('Database opened');
+    document.documentElement.classList.remove('notes');
     storeName = document.querySelector('[name=listType]').value.toLowerCase();
     recentList();
     const urlParams = new URLSearchParams(window.location.search);
@@ -169,5 +170,5 @@
   // Assign namespace
   window.TodoApp.cardManager = manager;
   // Open database and initialize
-  databaseOpen(init);
+  //databaseOpen(init);
 })();

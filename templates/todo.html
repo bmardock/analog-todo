@@ -1,12 +1,7 @@
 	<card class="front active">
 		<header>
 			<div class="listType">Today</div>
-			<input type="hidden" name="listType"/>
-			<!-- select name="listType">
-				<option>Today</option>
-				<option>Next</option>
-				<option>Someday</option>
-			</select -->
+			<input type="hidden" name="listType" value="today"/>
 			<input class="picker" name="date" type="date" placeholder="mm/dd/yyyy"/>
 			<div class="cardSignal radio-group">
 			  <input type="checkbox" name="signal1" class="radio-button">
@@ -15,7 +10,7 @@
 			</div>
 		</header>
 		<todoList>
-			<todoItem data-position="0" >
+			<todoItem data-position="1" >
 				<div class="dropdown" tabindex="-1">
 				  <button class="signal"></button>
 				  <div class="dropdown-content">
@@ -26,7 +21,7 @@
 				    <a href="#"><i class="signal delegated"></i>delegated</a>
 				  </div>
 				</div>
-				<input type="text" tabindex="0"/>
+				<input type="text" tabindex="1"/>
 				<select class="copy hidden">
 					<option></option>
 					<option>Today</option>
@@ -54,16 +49,13 @@
   	const dateInput = document.querySelector("header input[name=date]");
     const todoList = document.querySelector('todoList');
 		const brainInput = document.querySelector("textarea[name=braindump]");
-		
-		document.body.className = 'today';
-  	document.querySelector('[name=listType]').value='Today';
   	document.querySelector("header input[name=date]").value = urlParams.get('date') || today;
 
 	  (function (){ 
 	    const todoList = document.querySelector('todoList');
 	    const template = todoList.firstElementChild;
 	    const fragment = document.createDocumentFragment();
-	    for (let x = 1; x < 10; x++) {
+	    for (let x = 2; x <= 10; x++) {
 	        const clone = template.cloneNode(true);
 	        clone.setAttribute('data-position', x);
 	        clone.querySelector('input').tabIndex = x;
@@ -80,13 +72,13 @@
 	    const dateValue = new URLSearchParams(new URL(href, window.location.origin).search).get('date');
 	    document.querySelector("header input[name=date]").value = dateValue;
 	    todoManager.reconstructUrl();
-	    todoManager.fetchAndRenderTodos();
+	    todoManager.fetchAndRender();
 	  });
 
 	  document.querySelector("header input[name=date]").addEventListener("change", () => {
 	  	console.log('update day', dateInput.value);
 	    todoManager.reconstructUrl();
-	    todoManager.fetchAndRenderTodos();
+	    todoManager.fetchAndRender();
 	  });
 
 	  document.querySelector(".cardSignal").addEventListener("change", () => {
@@ -96,29 +88,26 @@
 	  todoList.addEventListener("change", async (e) => {
 	    if (e.target.className === 'copy') {
 	      // Copy logic here
-	      const cardType = e.target.value;
     		const signal = e.target.parentNode.querySelector('.signal').value;
     		const text = e.target.parentNode.querySelector('input').value;
     		try {
-	    		const results = await getDataByIndex('todo', 'type_date', [today, cardType]);
+	    		const results = await getDataByIndex('todo', 'date', today);
 	    		const data = results[0] || {
-						    type: cardType,
 						    date: today,
 						    todos: [],
 						    cardSignal: '',
-						    braindump: '',
-						    type_date: `${cardType}${today}`
+						    braindump: ''
 					};
 					if (data.todos.length < 10) {
-			      data.todos.push({ signal, text });
-			      await saveToStore('todo', data);
-			      console.log('Data saved successfully:', data);
-			    } else {
-			      console.warn('Todo list is full, cannot add more items.');
-			    }
-        } catch (error) {
-            console.error('Error fetching todos by index:', error.message);
-        }
+				      data.todos.push({ signal, text });
+				      await saveToStore('todo', data);
+				      console.log('Data saved successfully:', data);
+				  } else {
+				      console.warn('Todo list is full, cannot add more items.');
+				  }
+	      } catch (error) {
+	          console.error('Error fetching todos by index:', error.message);
+	      }
 	    } else {
 	      console.log('Change detected');
 	      todoManager.saveAndRender();
@@ -153,18 +142,16 @@
 	            // Find the next input in the list, or loop back to the first one
 	            const nextInput = inputs[currentIndex + 1] || inputs[0];
 	            nextInput.focus(); // Move focus to the next input
-	            target.removeEventListener('keydown', handleKeydown); // Clean up the event listener
+	            target.removeEventListener('keydown', handleKeydown);
 	          }
 	        }
 	      );
 	    }
 	  });
 
-	  brainInput.addEventListener("focusout", () => {
-	  	todoManager.saveAndRender();
-	  });
+	  brainInput.addEventListener("focusout", () => { todoManager.saveAndRender(); });
 		
-		const flippers = document.querySelectorAll(".flip");
+	  const flippers = document.querySelectorAll(".flip");
 	  flippers[0].addEventListener("click", () => todoManager.changeContent(1));
 	  flippers[1].addEventListener("click", () => todoManager.changeContent(-1));
 
@@ -183,5 +170,8 @@
 	      todoManager.changeContent(1);
 	    }
 	  });
+
+    console.log('Database opened');
+    todoManager.fetchAndRender();
   })();
 </script>

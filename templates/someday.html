@@ -54,12 +54,12 @@
     </main>
     <button class="flip"></button>
   </card>
-<script src="./js/cards.js?cacheBust"></script>
+<script src="./js/cards.js"></script>
 <script>
 (function (){
   //set the list of todos
   const mgmt = TodoApp.cardManager;
-  //mgmt.reinit();
+  mgmt.reinit();
   (function (){ 
     const todoList = document.querySelector('todoList');
     const template = todoList.firstElementChild;
@@ -101,9 +101,6 @@
     mgmt.recentList();
   });
 
-  //set Next look
-  document.body.className = 'someday';
-  document.querySelector('[name=listType]').value='Someday';
   document.querySelector('[name=title]').placeholder = new Date().getFullYear();
   //name change
   document.querySelector('[name=title]').addEventListener('change', async ({ target }) => {

@@ -1,7 +1,19 @@
 <link rel="stylesheet" href="./calendar.css?cacheBust">
+<style>
+    #calendar button{
+        cursor:pointer;
+        position:absolute;
+        top:20px;
+        transform: scaleY(2);
+        background:transparent; border:none; font-weight: bold; display:inline-block;}
+    #next-month {right:0;}
+    #calendar h2 {margin-left:20px; display: inline-block;}
+</style>
     <div id="calendar">
         <div class="header">
+            <button id="prev-month">&lt;</button>
             <h2 class="month-year"></h2>
+            <button id="next-month">&gt;</button>
         </div>
         <div class="day_header days">
             <div class="day_name">Sun</div>
@@ -14,4 +26,4 @@
         </div>
         <div id="month_days" class="days"></div>
     </div>
-<script src="./js/calendar.js?cacheBust"></script>
+<script src="./js/calendar.js"></script>

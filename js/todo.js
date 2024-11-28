@@ -2,7 +2,7 @@
   // Check if the namespace already exists
   if (window.TodoApp?.todoManager) {
     console.warn('TodoApp.todoManager is already defined. Skipping redefinition.');
-    window.TodoApp.todoManager.fetchAndRenderTodos();
+    window.TodoApp.todoManager.fetchAndRender();
     return;
   }
 
@@ -14,49 +14,47 @@
     const dateInput = document.querySelector("header input[name=date]");
     getKeysFromStore('todo')
     .then((todos) => {
-      const result = {};
-      todos.forEach((item) => {
-        const [date, prefix] = item;
-        if (prefix && date) {
-          (result[date] ||= []).includes(prefix) || result[date].push(prefix);
-        }
-      });
-      const [year, month, day] = dateInput.value.split('-').map(Number);
-      const todayDate = new Date(year, month - 1, day);
-      const calWindow = 7;
-      const middle = Math.floor(calWindow / 2);
-      document.querySelector('.calendar').innerHTML = [...Array(calWindow)].map((_, i) => {
-        const currentDate = new Date(todayDate);
-        currentDate.setDate(todayDate.getDate() + i - middle);
-        const key = currentDate.toLocaleDateString('en-CA');
-        const typeList = result[key] || [];
-        return todoManager.createDayElement(currentDate, i === middle, typeList);
-      }).join('');
+        const eventDates = new Set();
+        todos.forEach(([type, date]) => {
+            if (date) {
+                eventDates.add(date);
+            }
+        });
 
+        const [year, month, day] = dateInput.value.split('-').map(Number);
+        const todayDate = new Date(year, month - 1, day);
+        const calWindow = 7;
+        const middle = Math.floor(calWindow / 2);
+        document.querySelector('.calendar').innerHTML = Array.from({ length: calWindow }, (_, i) => {
+            const currentDate = new Date(todayDate);
+            currentDate.setDate(todayDate.getDate() + i - middle);
+            const key = currentDate.toLocaleDateString('en-CA');
+            const hasEvent = eventDates.has(key);
+            return todoManager.createDayElement(currentDate, i === middle, hasEvent);
+        }).join('');
     });
   };
-
-  todoManager.createDayElement = (date, current, typeList) => {
+  todoManager.createDayElement = (date, current, hasEvent) => {
     const daysOfWeek = ["S", "M", "T", "W", "T", "F", "S"];
     let classNames = current ? 'current ' : '';
-    classNames += date.toDateString() === new Date().toDateString() ? 'today' : '';
+    classNames += date.toDateString() === new Date().toDateString() ? 'today ' : '';
+    classNames += hasEvent ? 'has-event ' : '';
+    
     return `
-      <div class="day">${daysOfWeek[date.getDay()]}
+      <div class="day">
+        ${daysOfWeek[date.getDay()]}
         <a href="/todo/?date=${date.toLocaleDateString('en-CA')}" class="${classNames}">${date.getDate()}</a>
-        ${typeList.includes("Today") ? '<span class="today"></span>' : ''}
-        ${typeList.includes("Next") ? '<span class="next"></span>' : ''}
-        ${typeList.includes("Someday") ? '<span class="someday"></span>' : ''}
+        ${hasEvent ? '<span class="today"></span>' : ''}
       </div>`;
   };
-
-  todoManager.fetchAndRenderTodos = () => {
+  
+  todoManager.fetchAndRender = () => {
     const today = new Date().toLocaleDateString('en-CA');
     const urlParams = new URLSearchParams(window.location.search);
     const dateInput = document.querySelector("header input[name=date]");
-    const type = 'Today';
     const date = dateInput.value || today;
     console.log('Fetching and rendering todos', date);
-    getDataByIndex('todo', 'type_date', [date, type])
+    getDataByIndex('todo', 'date', date)
         .then((data) => {
             todoManager.renderTodos(data); // Pass the data to the callback as the second argument
             todoManager.renderCalList();
@@ -93,12 +91,11 @@
   todoManager.saveAndRender = () => {
     console.log('Saving todo and re-rendering');
     saveToStore('todo', todoManager.getDataFromDOM())
-          .then(() => todoManager.fetchAndRenderTodos() )
+          .then(() => todoManager.fetchAndRender() )
           .catch(databaseError);
   };
 
   todoManager.getDataFromDOM = () => ({
-    type: document.querySelector('header [name=listType]').value,
     date: document.querySelector('header [name=date]').value,
     todos: Array.from(document.querySelectorAll('todoList todoitem'))
       .map(todo => ({
@@ -123,12 +120,6 @@
     url.searchParams.set('date', dateInput.value);
     window.history.pushState({}, '', url);
   };
-
-  databaseOpen(() => {
-    console.log('Database opened');
-    todoManager.fetchAndRenderTodos();
-  });
-
   // Assign to the namespace
   window.TodoApp.todoManager = todoManager;
 })();
