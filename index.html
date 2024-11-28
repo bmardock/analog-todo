@@ -19,10 +19,8 @@
             type="text/css"
         />
     </noscript>
-    <link rel="stylesheet" href="./todo.css?cacheBust=1">
-    <script>
-        document.head.appendChild(Object.assign(document.createElement('script'), { src: `./js/database.js?cacheBust=${Date.now()}` }));
-    </script>
+    <link rel="stylesheet" href="./todo.css?cacheBust=2">
+    <script src="./js/database.js"></script>
 </head>
 <body>
     <div class="container">
@@ -96,11 +94,8 @@
 
         // Function to load the template based on the current route
         function loadRoute() {
-            // Get the current route from the hash, default to 'home'
-            //const route = location.pathname.split('/').slice(-1) || 'todo';
             const route = location.hash.slice(1) || 'todo';
             const templatePath = routes[route];
-            //window.history.pushState({}, '', `/todo/#${route}`);
             document.querySelector('body').className = '';
             // Fetch and display the template content
             if (templatePath) {
@@ -108,7 +103,7 @@
                     .then(response => response.ok ? response.text() : 'Page not found')
                     .then(html => {
                         document.getElementById('content').innerHTML = html;
-                        document.documentElement.className = route;
+                        document.querySelector('body').className = route;
 
                         // Create a temporary div to parse and extract script elements
                         const tempDiv = document.createElement('div');
@@ -148,8 +143,10 @@
                 window.dispatchEvent(new Event("hashchange"));
             }
         });
-        // Load the initial route
-        loadRoute();
+        databaseOpen(() => {
+            // Load the initial route
+            loadRoute();
+        });
     </script>
 </body>
 </html>
