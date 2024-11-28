@@ -91,6 +91,7 @@
                 });
             }
         }
+        const templateCache = new Map();
 
         // Function to load the template based on the current route
         function loadRoute() {
@@ -99,12 +100,18 @@
             document.querySelector('body').className = '';
             // Fetch and display the template content
             if (templatePath) {
+                if (templateCache.has(templatePath)) {
+                    const html = templateCache.get(templatePath);
+                    document.getElementById('content').innerHTML = html;
+                    document.querySelector('body').className = route;
+                    return;
+                }
                 fetch(templatePath)
                     .then(response => response.ok ? response.text() : 'Page not found')
                     .then(html => {
                         document.getElementById('content').innerHTML = html;
                         document.querySelector('body').className = route;
-
+                        templateCache.set(templatePath, html);
                         // Create a temporary div to parse and extract script elements
                         const tempDiv = document.createElement('div');
                         tempDiv.innerHTML = html;

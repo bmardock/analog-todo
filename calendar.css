@@ -68,3 +68,12 @@
     color:#333;
     cursor: inherit;
 }
+
+#calendar button{
+    cursor:pointer;
+    position:absolute;
+    top:20px;
+    transform: scaleY(2);
+    background:transparent; border:none; font-weight: bold; display:inline-block;}
+#next-month {right:0;}
+#calendar h2 {margin-left:20px; display: inline-block;}
