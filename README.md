@@ -13,7 +13,7 @@ Add triggers to move the user into the right direction and keep them motivated t
 - Create a minimalistic todo app based on the following design:
 [analog todo cards](https://ugmonk.com/blogs/journal/analog-the-simplest-productivity-system)
 - Create supplimental workflows to plan and review todo list for the day.
-
+[analog todo card app](https://bmardock.github.io/analog-todo)
 
 ## V1. Using the task list:
 ```
