@@ -426,13 +426,14 @@ footer li.someday a {background-image: url('./imgs/someday.svg');}
 }
 
 
-html.goal footer li.goal a,
-html.todo footer li.todo a,
-html.calendar footer li.calendar a,
-html.export footer li.export a,
-html.info footer li.info a,
-html.next footer li.next a, 
-html.someday footer li.someday a
+body.goal footer li.goal a,
+body.today footer li.todo a,
+body.todo footer li.todo a,
+body.calendar footer li.calendar a,
+body.export footer li.export a,
+body.info footer li.info a,
+body.next footer li.next a, 
+body.someday footer li.someday a
 {text-decoration: none;  opacity: 1; -webkit-text-stroke: .6px #000;}
 
 card{display:none;}
@@ -618,6 +619,8 @@ card.active{display:block;}
   margin-top: 10px;
 }
 
+.archive-button{display:none;}
+.archive-button.on{display: block;}
 /* Hide the default checkbox */
 .archive-checkbox { display:none;}
 
