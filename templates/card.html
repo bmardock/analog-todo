@@ -1,0 +1,243 @@
+  <card class="front active">
+    <header>
+      <div class="listType"></div>
+      <input type="hidden" name="listType" value=""/>
+      <input class="picker" name="title" type="text" placeholder=""/>
+      <div class="cardSignal radio-group">
+        <input type="checkbox" name="signal1" class="radio-button">
+        <input type="checkbox" name="signal2" class="radio-button">
+        <input type="checkbox" name="signal3" class="radio-button">
+      </div>
+    </header>
+    <todoList>
+      <todoItem data-position="1" >
+        <div class="dropdown" tabindex="-1">
+          <button class="signal"></button>
+          <div class="dropdown-content">
+            <a href="#"><i class="signal"></i>empty</a>
+            <a href="#"><i class="signal in-progress"></i>in-progress</a>
+            <a href="#"><i class="signal completed"></i>completed</a>
+            <a href="#"><i class="signal appointment"></i>appointment</a>
+            <a href="#"><i class="signal delegated"></i>delegated</a>
+          </div>
+        </div>
+        <input type="text" tabindex="1"/>
+        <select class="copy hidden">
+          <option></option>
+          <option>Today</option>
+          <option>Next</option>
+          <option>Someday</option>
+        </select>
+      </todoItem>
+    </todoList>
+    <button class="flip"></button>
+    <cal class="calendar"></cal>
+    <div class="archive-button">
+      <input name="archive" id="archive" type="checkbox" class="archive-checkbox" />
+      <label for="archive" class="archive" title="Archive Card"></label>
+    </div>
+    <div class="recent">
+      <h2>Recent:</h2>
+      <div id="recent_list" class="list"></div>
+    </div>
+    <div class="archive">
+      <h2 class="archive-header">Archives:</h2>
+      <div id="archive_list" class="list"></div>
+    </div>
+  </card>
+  <card class="back">
+    <main>
+      <p>Capture your thoughts, ideas, and notes here.</p>
+      <textarea name="braindump"/></textarea>
+    </main>
+    <button class="flip"></button>
+  </card>
+<script src="./js/global.js"></script>
+<script>
+(function (){
+  //set the list of todos
+  const mgmt = TodoApp.cardManager;
+  let hash = location.hash.slice(1) || 'today';
+  hash = hash === 'todo' ? 'today' : hash;
+  const listType = hash[0].toUpperCase() + hash.slice(1).toLowerCase();
+
+  document.querySelector('[name=listType]').value = listType;
+  document.querySelector('.listType').innerHTML = listType;
+
+  let placeholderTxt = '';
+  if(listType == 'Today') {
+    const today = new Date().toLocaleDateString('en-CA');
+    const urlParams = new URLSearchParams(window.location.search);
+    document.querySelector(".picker").value = urlParams.get('date') || today;
+    document.querySelector('.picker').name = 'date';
+    document.querySelector('.picker').type = 'date';
+    console.log('picker', document.querySelector('.picker').value);
+    placeholderTxt = 'mm/dd/yyyy';
+
+    document.querySelector('.calendar').addEventListener('click', (e) => {
+      const targetLink = e.target.closest('a');
+      if (!targetLink) return;
+      e.preventDefault();
+      const href = targetLink.getAttribute('href');
+      const dateValue = new URLSearchParams(new URL(href, window.location.origin).search).get('date');
+      document.querySelector(".picker").value = dateValue;
+      mgmt.fetchAndRender();
+    });
+  } else {
+    document.querySelector('.picker').name = 'name';
+    document.querySelector('.picker').type = 'text';
+    placeholderTxt = (listType == 'Next')? new Date().toLocaleString('default', { month: 'long' }) : new Date().getFullYear();
+    // handle next list click
+    document.querySelectorAll('.list').forEach(el => el.addEventListener('click', ({target}) => {
+      if(target.className == 'circle'){
+        document.querySelectorAll('.list .on').forEach(el => el.classList.remove('on'));
+        let name = target.getAttribute('data-text');
+        if(name == 'Add New'){
+          console.log('show new list');
+          name = '';
+          document.querySelector('.picker').readonly = false;
+        }
+        document.querySelector('.picker').value = name;
+        mgmt.fetchAndRender();
+      }
+    }) );
+    //toggle archive list
+    document.querySelector('.archive-header').addEventListener('click', ({target}) => {
+        target.parentNode.classList.toggle('open');
+    })
+    //archive button
+    document.querySelector('#archive').addEventListener('change', mgmt.saveAndRender );
+    document.querySelector('.picker').addEventListener('change', async ({ target }) => {
+      if(target.name == 'name'){
+        console.log('Original Value:', target.value);
+        try {
+            // Get the unique card name asynchronously
+            const uniqueName = await mgmt.getUniqueCardName(target.value);
+            console.log('Unique Name:', uniqueName);
+            // Update the input field with the unique name
+            //target.value = uniqueName;
+            //document.querySelector('.picker').value = uniqueName;
+            console.log('NAME', target.value);
+            return
+        } catch (error) {
+            console.error('Error generating unique card name:', error);
+        }
+      }
+      else{
+        mgmt.fetchAndRender();
+      }
+    });
+  }
+  console.log(placeholderTxt);
+  document.querySelector('.picker').placeholder = placeholderTxt;
+
+  //todoList change
+  document.querySelector('todoList').addEventListener("change", async (e) => {
+    if (e.target.className === 'copy') { // Copy logic here
+      const signal = e.target.parentNode.querySelector('.signal').value;
+      const text = e.target.parentNode.querySelector('input').value;
+      const today = new Date().toLocaleDateString('en-CA');
+      try {
+        const results = await getDataByIndex('todo', 'date', today);
+        const data = results[0] || {
+              date: today,
+              todos: [],
+              cardSignal: '',
+              braindump: ''
+      };
+      if (data.todos.length < 10) {
+          data.todos.push({ signal, text });
+          await saveToStore('todo', data);
+          console.log('Data saved successfully:', data);
+        } else {
+          console.warn('Todo list is full, cannot add more items.');
+        }
+      } catch (error) {
+          console.error('Error fetching todos by index:', error.message);
+        }
+    } else {
+      console.log('Change detected');
+      mgmt.saveAndRender();
+    }
+  });
+  document.querySelector('todoList').addEventListener("click", (e) => {
+      e.preventDefault();
+      const anchor = e.target.closest('a');
+      const dropdownContent = e.target.closest('.dropdown-content');
+      if (anchor && dropdownContent) {
+          console.log('dropdown select');
+          const selection = anchor.textContent.trim();
+          const button = dropdownContent.parentNode.querySelector('button');
+          if (button) {
+              button.className = `signal ${selection}`;
+              button.value = selection;
+          }
+          dropdownContent.parentNode.blur();
+          anchor.blur();
+          mgmt.saveAndRender();
+      }
+  });
+
+  //select entire todo item
+  document.querySelector('todoList').addEventListener("focusin", ({ target }) => {
+    if (target.matches('input')){
+      target.setSelectionRange(0, target.value.length);
+      target.addEventListener('keydown', 
+        function handleKeydown(event) {
+          if (event.key === 'Enter') {
+            console.log('Enter button clicked');
+            const inputs = Array.from(document.querySelector('todoList').querySelectorAll('input'));
+            const currentIndex = inputs.indexOf(target);
+            // Find the next input in the list, or loop back to the first one
+            const nextInput = inputs[currentIndex + 1] || inputs[0];
+            nextInput.focus(); // Move focus to the next input
+            target.removeEventListener('keydown', handleKeydown);
+          }
+        }
+      );
+    }
+  });
+
+  document.querySelector(".cardSignal").addEventListener("change", mgmt.saveAndRender);
+  document.querySelector("[name=braindump]").addEventListener("focusout", mgmt.saveAndRender);
+
+  const flippers = document.querySelectorAll(".flip");
+  flippers[0].addEventListener("click", () => { mgmt.changeContent(1); });
+  flippers[1].addEventListener("click", () => { mgmt.changeContent(-1); });
+
+  let touchStartX = 0;
+  let touchEndX = 0;
+
+  document.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].screenX; });
+  document.addEventListener('touchend', (e) => {
+    touchEndX = e.changedTouches[0].screenX;
+    const swipeThreshold = 150;
+    if (touchEndX > touchStartX + swipeThreshold) {
+      console.log("Swiped left to right");
+      mgmt.changeContent(-1);
+    } else if (touchStartX > touchEndX + swipeThreshold) {
+      console.log("Swiped right to left");
+      mgmt.changeContent(1);
+    }
+  });
+
+  // Attach event listeners on keys
+  document.addEventListener('keydown', (e) => {
+      // Check if the focused element is an input, textarea, or contenteditable
+      const activeElement = document.activeElement;
+      const isInputFocused = activeElement.tagName === 'INPUT' || 
+                             activeElement.tagName === 'TEXTAREA' || 
+                             activeElement.isContentEditable;
+      if (!isInputFocused) {
+          if (e.key === 'ArrowLeft') {
+              mgmt.changeContent(-1);
+          }
+          if (e.key === 'ArrowRight') {
+              mgmt.changeContent(1);
+          }
+      }
+  });
+  mgmt.setupTodos();
+  mgmt.init();
+})();
+</script>

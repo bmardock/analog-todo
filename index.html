@@ -37,35 +37,18 @@
             </ul>
         </footer>
     </div>
-    <!-- script src="https://cdnjs.cloudflare.com/ajax/libs/nosleep/0.12.0/NoSleep.min.js"></script -->
     <script>
-        /* Function to enable NoSleep
-        function enableNoSleep() {
-            const noSleep = new NoSleep();
-            noSleep.enable();
-            alert('Screen will stay awake while the app is open.');
-        }
-        document.querySelector('footer .todo a').addEventListener('click', ({target}) => {
-            target.style.color='red';
-            //enableNoSleep();
-            //preventSleep();
-            if (document.documentElement.requestFullscreen) {
-                //document.documentElement.requestFullscreen();
-            }
-        }, { once: true });
-        */
-
         // Define routes and corresponding template files
         const routes = {
             blank: 'templates/blank.html',
             goal: 'templates/goal.html',
-            todo: 'templates/todo.html',
+            todo: 'templates/card.html',
             calendar: 'templates/calendar.html',
             export: 'templates/export.html',
             info: 'templates/info.html',
             qrcode: 'templates/qrcode.html',
-            next: 'templates/next.html',
-            someday: 'templates/someday.html'
+            next: 'templates/card.html',
+            someday: 'templates/card.html'
         };
 
         async function loadScriptsSequentially(scripts) {
@@ -86,12 +69,10 @@
                         newScript.textContent = script.textContent;
                         resolve();
                     }
-
                     document.body.appendChild(newScript);
                 });
             }
         }
-        const templateCache = new Map();
 
         // Function to load the template based on the current route
         function loadRoute() {
@@ -100,18 +81,12 @@
             document.querySelector('body').className = '';
             // Fetch and display the template content
             if (templatePath) {
-                if (templateCache.has(templatePath)) {
-                    const html = templateCache.get(templatePath);
-                    document.getElementById('content').innerHTML = html;
-                    document.querySelector('body').className = route;
-                    return;
-                }
                 fetch(templatePath)
                     .then(response => response.ok ? response.text() : 'Page not found')
                     .then(html => {
                         document.getElementById('content').innerHTML = html;
-                        document.querySelector('body').className = route;
-                        templateCache.set(templatePath, html);
+                        document.querySelector('body').className = route === 'todo' ? 'today' : route;
+
                         // Create a temporary div to parse and extract script elements
                         const tempDiv = document.createElement('div');
                         tempDiv.innerHTML = html;
@@ -151,7 +126,6 @@
             }
         });
         databaseOpen(() => {
-            // Load the initial route
             loadRoute();
         });
     </script>
