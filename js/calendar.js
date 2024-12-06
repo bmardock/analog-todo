@@ -1,4 +1,3 @@
-(function() {
     const urlParams = new URLSearchParams(window.location.search);
     const monthParam = urlParams.get('month');
     let date;
@@ -35,49 +34,33 @@
         document.querySelector("#month_days").innerHTML = calendarHTML;
     };
 
-    const renderEvents = (eventDates) => {
-        eventDates.forEach(date => {
+    const renderEvents = (eventDetails) => {
+        eventDetails.forEach(({ date, cardSignal }) => {
             const dayElement = document.getElementById(date);
+
             if (dayElement) {
-                dayElement.innerHTML += `<a class="event today" href="?date=${date}#todo"></a>`;
+                const svg = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="8" height="26" viewBox="0 0 6 26" fill="none">
+                        <circle cx="3" cy="6" r="3" fill="${cardSignal[0] ? '#000' :'#ccc' }"/>
+                        <circle cx="3" cy="14" r="3" fill="${cardSignal[1] ? '#000' :'#ccc'}"/>
+                        <circle cx="3" cy="22" r="3" fill="${cardSignal[2] ? '#000' :'#ccc'}"/>
+                    </svg>`;
+                dayElement.innerHTML += svg;
             }
         });
     };
-    // Load events from the database and render them
     const loadEvents = () => {
         databaseOpen(() => {
             getAllFromStore('todo')
                 .then(list => {
-                    const eventDates = [...new Set(list.map(({ date }) => date))];
-                    renderEvents(eventDates);
+                    console.log(list[0].cardSignal);
+                    // Create a unique set of date and cardSignal pairs
+                    const eventDetails = [
+                        ...new Set(list.map(({ date, cardSignal }) => JSON.stringify({ date, cardSignal })))
+                    ].map(item => JSON.parse(item));
+
+                    renderEvents(eventDetails); // Pass the array of objects to renderEvents
                 })
                 .catch(databaseError);
         });
     };
-    //handle click on empty day
-    document.querySelector('#month_days').addEventListener("click", ({ target }) => {
-        if (target.classList.contains('day_num')) {
-            const url = `?date=${target.getAttribute('id')}#todo`;
-            window.history.pushState({}, '', url);
-            window.dispatchEvent(new Event("hashchange"));
-        }
-    });
-    document.getElementById('prev-month').addEventListener('click', () => {
-        date.setMonth(date.getMonth() - 1); // Go to the previous month
-        const newUrl = `?month=${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}#calendar`;
-        window.history.pushState({}, '', newUrl);
-        renderCalendar();
-        loadEvents(); // Reload events for the new month
-    });
-
-    document.getElementById('next-month').addEventListener('click', () => {
-        date.setMonth(date.getMonth() + 1); // Go to the next month
-        const newUrl = `?month=${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}#calendar`;
-        window.history.pushState({}, '', newUrl);
-        renderCalendar();
-        loadEvents(); // Reload events for the new month
-    });
-    // Initialize calendar and load events
-    renderCalendar();
-    loadEvents();
-})();

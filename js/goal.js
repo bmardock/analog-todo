@@ -1,4 +1,4 @@
-(function (){
+
 	function getWeekIdentifier(date) {
 	    // Create a new date representing the start of the year
 	    const startDate = new Date(date.getFullYear(), 0, 1);
@@ -41,27 +41,24 @@
             console.error("Error reading weekly goals:", error);
         });
 	}
-	function renderGoals(result){
-		if(result){
-			document.querySelector('[name=goal]').value = result?.[0]?.goalText ?? "";
-			document.querySelector('[name=start]').value = result?.[0]?.createTime ?? "";
-			document.querySelector('[name=review]').value = result?.[0]?.reviewTime ?? "";
-		}
-	}
+	function renderGoals(result) {
+        console.log(result);
 
-	document.querySelector('main').addEventListener("change", e => {
-		let goalText = document.querySelector('[name=goal]').value;
-		let createTodos = document.querySelector('[name=start]').value;
-		let reviewTodos = document.querySelector('[name=review]').value;
-		console.log('changed');
-		saveWeeklyGoal(goalText, createTodos, reviewTodos);
-	});
-	databaseOpen(() => {
-	    console.log('Database opened');
-			readWeeklyGoal(renderGoals);
-	});
+        // Get the last item from the result array
+        const lastItem = result?.at(-1);
 
-/*	Doesnt seem to save the two events
+        const goalText = lastItem?.goalText ?? "";
+        const createTodos = lastItem?.createTime ?? "";
+        const reviewTodos = lastItem?.reviewTime ?? "";
+
+        if (lastItem) {
+            document.querySelector('[name=goal]').value = goalText;
+            document.querySelector('[name=start]').value = createTodos;
+            document.querySelector('[name=review]').value = reviewTodos;
+        }
+
+        document.getElementById('generate-ics').style.display = (createTodos.length && reviewTodos.length) ? 'block' : 'none';
+    }
 
 document.getElementById("generate-ics").addEventListener("click", () => {
   const startTime = document.querySelector('[name=start]').value;
@@ -86,49 +83,49 @@ document.getElementById("generate-ics").addEventListener("click", () => {
   const dateStr = today.toISOString().split("T")[0].replace(/-/g, "");
 
   // Generate dynamic content for the .ics file
-  const icsContent = `
-BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//ical.shopboardwalkvintage.com//iCal Event Maker
+icsContent = `BEGIN:VCALENDAR
 CALSCALE:GREGORIAN
+PRODID:-//Analog Tasks//iCal Event Maker//EN
+VERSION:2.0
+X-WR-CALNAME:Scheduled Reminders
 BEGIN:VTIMEZONE
 TZID:${userTimeZone}
+BEGIN:DAYLIGHT
+DTSTART:20070311T020000
+RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=2SU
+TZOFFSETFROM:-0800
+TZOFFSETTO:-0700
+END:DAYLIGHT
 BEGIN:STANDARD
-TZOFFSETFROM:-0000
-TZOFFSETTO:-0000
-DTSTART:19700101T000000
+DTSTART:20071104T020000
+RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU
+TZOFFSETFROM:-0700
+TZOFFSETTO:-0800
 END:STANDARD
 END:VTIMEZONE
+
 BEGIN:VEVENT
+DTEND;TZID=${userTimeZone}:${dateStr}T${formatTime(startTime)}
 DTSTAMP:${dateStr}T000000Z
-UID:${Date.now()}-start@ical.shopboardwalkvintage.com
 DTSTART;TZID=${userTimeZone}:${dateStr}T${formatTime(startTime)}
-RRULE:FREQ=WEEKLY;WKST=SU;BYDAY=MO,TU,WE,TH,FR;UNTIL=${dateStr}T160000Z
-DTEND;TZID=${userTimeZone}:${dateStr}T${formatTime(startTime + 30)}
-SUMMARY:Add Todo List
-URL:https://shopboardwalkvintage.com/todo/
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:Add Todo List
-TRIGGER:-PT0M
-END:VALARM
+RRULE:FREQ=DAILY
+SUMMARY:Create Todo List
+DESCRIPTION:Think about this weeks goal and what tasks will get closer to that goal?
+TRANSP:OPAQUE
+UID:ReviewTodoList-${dateStr}
 END:VEVENT
+
 BEGIN:VEVENT
+DTEND;TZID=${userTimeZone}:${dateStr}T${formatTime(reviewTime)}
 DTSTAMP:${dateStr}T000000Z
-UID:${Date.now()}-review@ical.shopboardwalkvintage.com
 DTSTART;TZID=${userTimeZone}:${dateStr}T${formatTime(reviewTime)}
-RRULE:FREQ=WEEKLY;WKST=SU;BYDAY=MO,TU,WE,TH,FR;UNTIL=${dateStr}T160000Z
-DTEND;TZID=${userTimeZone}:${dateStr}T${formatTime(reviewTime + 15)}
-SUMMARY:Review Progress Todo List
-URL:https://shopboardwalkvintage.com/todo/
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:Review Progress Todo List
-TRIGGER:-PT0M
-END:VALARM
+RRULE:FREQ=DAILY
+SUMMARY:Review Todo List
+DESCRIPTION:Update status of todays tasks, copy over any to tomorrow and rate your daily progress with the cardSignal.
+TRANSP:OPAQUE
+UID:CreateTodoList-${dateStr}
 END:VEVENT
-END:VCALENDAR
-`;
+END:VCALENDAR`;
 
   // Create a blob with the ICS content and download it
   const blob = new Blob([icsContent], { type: "text/calendar" });
@@ -141,5 +138,3 @@ END:VCALENDAR
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 });
-*/
-})();

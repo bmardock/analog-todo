@@ -6,14 +6,16 @@ class TodoManager {
   }
 
   setupTodos = () => {
-  	const todoList = document.querySelector("todoList");
-  	const template = todoList.firstElementChild;
-  	for (let x = 1; x < 10; x++) {
-  	  const clone = template.cloneNode(true);
-  	  clone.setAttribute('data-position', x);
-  	  clone.querySelector('input').tabIndex = x;
-  	  todoList.appendChild(clone);
-  	}
+    const todoList = document.querySelector('todoList');
+    const template = todoList.firstElementChild;
+    const fragment = document.createDocumentFragment();
+    for (let x = 2; x <= 10; x++) {
+        const clone = template.cloneNode(true);
+        clone.setAttribute('data-position', x);
+        clone.querySelector('input').tabIndex = x;
+        fragment.appendChild(clone);
+    }
+    todoList.appendChild(fragment);
   } 
 
   // Utility to get a unique card name
@@ -219,18 +221,63 @@ class TodoManager {
     url.searchParams.set(key, value);
     window.history.pushState({}, '', url);
   }
-  getLastRow() {
-  	getAllFromStore(this.storeName, 'archived', 0)
-        .then(rows => {
-          if (rows.length > 0) {
-            rows.sort((a, b) => a.lastUpdated - b.lastUpdated);
-            this.renderCard([rows.at(-1)]);
-          }
-        })
-        .catch(error => console.error('Error fetching the last row:', error));
+  async getLastRow(storeName) {
+  	try {
+      const rows = await getAllFromStore(storeName, 'archived', 0);
+      if (rows.length > 0) {
+        rows.sort((a, b) => a.lastUpdated - b.lastUpdated);
+        return rows.at(-1);
+        //this.renderCard([rows.at(-1)]); // Using `at(-1)` to get the last element
+      }
+      return null;
+    } catch (error) {
+      console.error('Error fetching the last row:', error);
+    }
+  }
+  async copyTaskToList(copyTo, signal, text) {
+    const today = new Date().toLocaleDateString('en-CA');
+    const tomorrow = new Date(Date.now() + 86400000).toLocaleDateString('en-CA');
+      // Determine store name and value
+    const storeMap = {
+      today: { storeName: 'todo', value: today },
+      tomorrow: { storeName: 'todo', value: tomorrow },
+      next: { storeName: 'next' },
+      someday: { storeName: 'someday' }
+    };
+    const { storeName, value } = storeMap[copyTo] || {};
+    if (!storeName) {
+      alert('Invalid destination list specified.');
+      return;
+    }
+    let data;
+    if (copyTo === 'next' || copyTo === 'someday') {
+      // Get the last row for "next" or "someday"
+      if (!(data = await this.getLastRow(storeName))) {
+        alert('No list available in the target store.');
+        return;
+      }
+    } else {
+      // For "today" or "tomorrow", find or create a matching entry
+      const results = await getDataByIndex(storeName, 'date', value);
+      data = results[0] || {
+        date: value,
+        todos: [],
+        cardSignal: '',
+        braindump: ''
+      };
+    }
+
+    // Add the task to the list
+    if (data.todos.length < 10) {
+      data.todos.push({ signal, text });
+      await saveToStore(storeName, data);
+      console.log('Data saved successfully:', data);
+    } else {
+      alert('Todo list is full, cannot add more items.');
+    }
   }
   // Initialize the manager
-  init() {
+  async init() {
     this.storeName = window.location.hash.slice(1) || document.querySelector('[name=listType]').value.toLowerCase();
     console.log('Database opened');
     document.documentElement.classList.remove('notes');
@@ -245,7 +292,8 @@ class TodoManager {
       this.fetchAndRender();
     } else if(this.storeName != 'todo'){
       console.log('No name in URL. Fetching most recent card.');
-      this.getLastRow();
+      const lastRow = await this.getLastRow(this.storeName);
+      this.renderCard([lastRow]);
     }
   }
 }

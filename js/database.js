@@ -26,7 +26,7 @@
     const databaseOpen = (callback) => {
         console.log('starting db');
         // Open a database, specify the name and version
-        var version = 25;
+        var version = 26;
         var request = indexedDB.open('todos', version);
         // Run migrations if necessary
         request.onupgradeneeded = (e) => {

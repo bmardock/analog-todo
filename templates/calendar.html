@@ -1,4 +1,3 @@
-<link rel="stylesheet" href="./calendar.css?cacheBust">
 <div id="calendar">
     <div class="header">
         <button id="prev-month">&lt;</button>
@@ -17,3 +16,31 @@
     <div id="month_days" class="days"></div>
 </div>
 <script src="./js/calendar.js"></script>
+<script>
+    //handle click on empty day
+    document.querySelector('#month_days').addEventListener("click", ({ target }) => {
+        if (target.classList.contains('day_num')) {
+            const url = `?date=${target.getAttribute('id')}#todo`;
+            window.history.pushState({}, '', url);
+            window.dispatchEvent(new Event("hashchange"));
+        }
+    });
+    document.getElementById('prev-month').addEventListener('click', () => {
+        date.setMonth(date.getMonth() - 1); // Go to the previous month
+        const newUrl = `?month=${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}#calendar`;
+        window.history.pushState({}, '', newUrl);
+        renderCalendar();
+        loadEvents(); // Reload events for the new month
+    });
+
+    document.getElementById('next-month').addEventListener('click', () => {
+        date.setMonth(date.getMonth() + 1); // Go to the next month
+        const newUrl = `?month=${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}#calendar`;
+        window.history.pushState({}, '', newUrl);
+        renderCalendar();
+        loadEvents(); // Reload events for the new month
+    });
+    // Initialize calendar and load events
+    renderCalendar();
+    loadEvents();
+</script>

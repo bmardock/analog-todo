@@ -1,7 +1,7 @@
   <card class="front active">
     <header>
-      <div class="listType"></div>
-      <input type="hidden" name="listType" value=""/>
+      <!-- div class="listType"></div -->
+      <input class="listType" type="text" name="listType" readonly value=""/>
       <input class="picker" name="title" type="text" placeholder=""/>
       <div class="cardSignal radio-group">
         <input type="checkbox" name="signal1" class="radio-button">
@@ -25,6 +25,7 @@
         <select class="copy hidden">
           <option></option>
           <option>Today</option>
+          <option>Tomorrow</option>
           <option>Next</option>
           <option>Someday</option>
         </select>
@@ -107,54 +108,44 @@
     })
     //archive button
     document.querySelector('#archive').addEventListener('change', mgmt.saveAndRender );
-    document.querySelector('.picker').addEventListener('change', async ({ target }) => {
-      if(target.name == 'name'){
-        console.log('Original Value:', target.value);
-        try {
-            // Get the unique card name asynchronously
-            const uniqueName = await mgmt.getUniqueCardName(target.value);
-            console.log('Unique Name:', uniqueName);
-            // Update the input field with the unique name
-            //target.value = uniqueName;
-            //document.querySelector('.picker').value = uniqueName;
-            console.log('NAME', target.value);
-            return
-        } catch (error) {
-            console.error('Error generating unique card name:', error);
-        }
-      }
-      else{
-        mgmt.fetchAndRender();
-      }
-    });
   }
+  document.querySelector('.picker').addEventListener('change', async ({ target }) => {
+    if(target.name == 'name'){
+      console.log('Original Value:', target.value);
+      try {
+          // Get the unique card name asynchronously
+          const uniqueName = await mgmt.getUniqueCardName(target.value);
+          console.log('Unique Name:', uniqueName);
+          // Update the input field with the unique name
+          //target.value = uniqueName;
+          //document.querySelector('.picker').value = uniqueName;
+          console.log('NAME', target.value);
+          return
+      } catch (error) {
+          console.error('Error generating unique card name:', error);
+      }
+    }
+    else{
+      mgmt.fetchAndRender();
+    }
+  });
   console.log(placeholderTxt);
   document.querySelector('.picker').placeholder = placeholderTxt;
 
   //todoList change
   document.querySelector('todoList').addEventListener("change", async (e) => {
-    if (e.target.className === 'copy') { // Copy logic here
+    if (e.target.className === 'copy') {
+      const copyTo = e.target.value.toLowerCase();
       const signal = e.target.parentNode.querySelector('.signal').value;
       const text = e.target.parentNode.querySelector('input').value;
-      const today = new Date().toLocaleDateString('en-CA');
       try {
-        const results = await getDataByIndex('todo', 'date', today);
-        const data = results[0] || {
-              date: today,
-              todos: [],
-              cardSignal: '',
-              braindump: ''
-      };
-      if (data.todos.length < 10) {
-          data.todos.push({ signal, text });
-          await saveToStore('todo', data);
-          console.log('Data saved successfully:', data);
-        } else {
-          console.warn('Todo list is full, cannot add more items.');
-        }
+        // Wait for copyTaskToList to complete
+        await mgmt.copyTaskToList(copyTo, signal, text);
+        // Trigger renderCalList after copyTaskToList is completed
+        mgmt.renderCalList();
       } catch (error) {
-          console.error('Error fetching todos by index:', error.message);
-        }
+        console.error('Error while copying task or rendering list:', error);
+      }
     } else {
       console.log('Change detected');
       mgmt.saveAndRender();
@@ -205,9 +196,10 @@
   flippers[0].addEventListener("click", () => { mgmt.changeContent(1); });
   flippers[1].addEventListener("click", () => { mgmt.changeContent(-1); });
 
+  /*
+  //seems kinda clunky 
   let touchStartX = 0;
   let touchEndX = 0;
-
   document.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].screenX; });
   document.addEventListener('touchend', (e) => {
     touchEndX = e.changedTouches[0].screenX;
@@ -220,6 +212,7 @@
       mgmt.changeContent(1);
     }
   });
+  */
 
   // Attach event listeners on keys
   document.addEventListener('keydown', (e) => {
@@ -229,12 +222,8 @@
                              activeElement.tagName === 'TEXTAREA' || 
                              activeElement.isContentEditable;
       if (!isInputFocused) {
-          if (e.key === 'ArrowLeft') {
-              mgmt.changeContent(-1);
-          }
-          if (e.key === 'ArrowRight') {
-              mgmt.changeContent(1);
-          }
+          if (e.key === 'ArrowLeft') { mgmt.changeContent(-1); }
+          if (e.key === 'ArrowRight') { mgmt.changeContent(1); }
       }
   });
   mgmt.setupTodos();

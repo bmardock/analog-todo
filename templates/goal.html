@@ -1,5 +1,25 @@
+<style>
+a.info {
+    color: #666;
+    -webkit-text-stroke: 0.5px #666;
+    text-decoration: none;
+    transition: color 0.3s, text-decoration 0.3s;
+    padding: 5px 0 5px 25px;
+    display: inline-block;
+    background-image: url(./imgs/info.svg);
+    background-size: 20px 20px;
+    background-repeat: no-repeat;
+    background-position: left;
+}
+
+a.info:hover {
+    color: #000;
+    text-decoration: underline;
+}
+.cal-link{cursor:pointer; display:none;}
+</style>
 <header>
-	<h2>Goal Setting</h2>
+	<a class="info" href="#info">Get started with the analog framework.</a>
 	<p>Set a goal for the week and define the best times to plan and review your progress.</p>
 	<p>What would make this week a success for you?</p>
 </header>
@@ -10,7 +30,16 @@
 	<p>Best time to review your daily progress?</p>
 	<input name="review" type="time" />
 	<br/>
-	<!-- #TODO not saving to cal correctly 
-		a id="generate-ics" class="cal-link">Set calendar reminder<i class="calendar-icon"></i></a -->
+	<a id="generate-ics" class="cal-link">Set calendar reminder<i class="calendar-icon"></i></a>
 </main>
 <script src="./js/goal.js"></script>
+<script>
+	document.querySelector('main').addEventListener("change", e => {
+		let goalText = document.querySelector('[name=goal]').value;
+		let createTodos = document.querySelector('[name=start]').value;
+		let reviewTodos = document.querySelector('[name=review]').value;
+		document.getElementById('generate-ics').style.display = (createTodos.length && reviewTodos.length) ? 'block' : 'none';
+		saveWeeklyGoal(goalText, createTodos, reviewTodos);
+	});
+	readWeeklyGoal(renderGoals);
+</script>
