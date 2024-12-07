@@ -19,7 +19,9 @@
             type="text/css"
         />
     </noscript>
-    <link rel="stylesheet" href="./todo.css?cacheBust=2">
+    <script>
+        document.head.insertAdjacentHTML('beforeend', `<link rel="stylesheet" href="./todo.css?cacheBust=${Date.now()}">`);
+    </script>
     <script src="./js/database.js"></script>
 </head>
 <body>
@@ -55,12 +57,11 @@
             for (const script of scripts) {
                 await new Promise((resolve, reject) => {
                     const newScript = document.createElement('script');
-                    
                     // If it's an external script, set the source and load it
                     if (script.src) {
-                        const cacheBust = `cacheBust=${Date.now()}`;
-                        const separator = script.src.includes('?') ? '&' : '?';
-                        newScript.src = `${script.src}${separator}${cacheBust}`;
+                        const debug = true; // Set to false to enable caching
+                        const cacheBust = debug ? `?cacheBust=${Date.now()}` : '';
+                        newScript.src = script.src + cacheBust;
                         newScript.async = false; // Ensure script executes in order
                         newScript.onload = resolve; // Resolve the promise when loaded
                         newScript.onerror = reject; // Reject if there's an error
@@ -76,7 +77,7 @@
 
         // Function to load the template based on the current route
         function loadRoute() {
-            const route = location.hash.slice(1) || 'todo';
+            const route = (location.hash = location.hash || '#todo').slice(1);
             const templatePath = routes[route];
             document.querySelector('body').className = '';
             // Fetch and display the template content
@@ -84,14 +85,20 @@
                 fetch(templatePath)
                     .then(response => response.ok ? response.text() : 'Page not found')
                     .then(html => {
-                        document.getElementById('content').innerHTML = html;
-                        document.querySelector('body').className = route === 'todo' ? 'today' : route;
-
-                        // Create a temporary div to parse and extract script elements
                         const tempDiv = document.createElement('div');
                         tempDiv.innerHTML = html;
-                        const scripts = Array.from(tempDiv.querySelectorAll('script'));
-
+                        const scripts = Array.from(tempDiv.querySelectorAll('script')).filter(script => {
+                            if (script.src) {
+                                const srcWithoutQuery = script.src.split('?')[0]; // Normalize src by removing query parameters
+                                return ![...document.querySelectorAll('script')].some(existingScript =>
+                                    existingScript.src.split('?')[0] === srcWithoutQuery // Check if src matches any existing script
+                                );
+                            }
+                            return true;
+                        });
+                        document.getElementById('content').innerHTML = html;
+                        document.querySelector('body').className = route === 'todo' ? 'today' : route;
+                        
                         // Load each script sequentially
                         loadScriptsSequentially(scripts)
                             .then(() => {
