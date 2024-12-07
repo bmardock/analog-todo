@@ -62,3 +62,7 @@ Capture ideas, aspirations, and goals that you would like to accomplish someday.
 - Utilize time management strategies to set productivity [MIT](https://www.calendar.com/blog/mit-time-management-strategy/)
 - Defining a tasks [4 quadrant](https://appfluence.com/productivity/time-management-strategies-for-busy-people-using-the-4-quadrant-method/) 
   (Critical due soon, Critical due later, Not critical, Uncategorized
+
+## V4. Task Assistant
+- Add an interface for a chatbot to assist user in defining and accomplishing goals.
+- Set reminders, create tasks for user based on conversation.
