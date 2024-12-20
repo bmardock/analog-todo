@@ -1,4 +1,4 @@
-![](analog-bg.png)
+![](./imgs/analog-bg.png)
 #### Summary:
 Managing a number of competing priorities between work and life becomes overwhelming over time. 
 When tasked to manage other people's projects and peoples career growth the process becomes unmanagable without proper tools.
