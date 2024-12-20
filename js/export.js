@@ -139,9 +139,13 @@
 
 
     function exportData() {
-        return Promise.all([getAllFromStore('todo'), getAllFromStore('weeklyGoals')])
-            .then(([todoData, weeklyGoalsData]) => {
-                return JSON.stringify({ todo: todoData, weeklyGoals: weeklyGoalsData });
+        return Promise.all([getAllFromStore('todo'), getAllFromStore('next'), getAllFromStore('someday'), getAllFromStore('weeklyGoals')])
+            .then(([todoData, nextData, somedayData, weeklyGoalsData ]) => {
+                return JSON.stringify({ 
+                    todo: todoData,
+                    next: nextData,
+                    someday: somedayData,
+                    weeklyGoals: weeklyGoalsData });
             });
     }
 

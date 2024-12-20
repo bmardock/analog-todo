@@ -19,8 +19,7 @@
             type="text/css"
         />
     </noscript>
-    <script>
-        document.head.insertAdjacentHTML('beforeend', `<link rel="stylesheet" href="./todo.css?cacheBust=${Date.now()}">`);
+    <link rel="stylesheet" href="./todo.css">
     </script>
     <script src="./js/database.js"></script>
 </head>
@@ -50,7 +49,9 @@
             info: 'templates/info.html',
             qrcode: 'templates/qrcode.html',
             next: 'templates/card.html',
-            someday: 'templates/card.html'
+            someday: 'templates/card.html',
+            coach: 'templates/coach.html',
+            remind: 'templates/reminder.html'
         };
 
         async function loadScriptsSequentially(scripts) {

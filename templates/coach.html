@@ -1,0 +1,232 @@
+<style>
+    #thread_id{font-size:10px;}
+    textarea { font-size:14px; width: 95%; border: 1px solid #ddd; border-radius: 5px; resize: none; padding:10px;}
+    #chatForm {padding:0 0 40px 0; position:relative;}
+    #chatForm button{
+        position:absolute;
+        right:5px;
+        bottom:25px;
+        border-radius:50%;
+        background-color:#000;
+        padding: 15px;  
+        display: inline-block;
+        background-image: url(./imgs/arrow-up-white.svg);
+        background-size: 20px 20px;
+        background-position: center;
+        background-repeat: no-repeat;
+        cursor: pointer;
+    }
+    #chatForm button:hover { background-color: #333; }
+    .chat-box { max-height: 450px; overflow-y: auto; margin-bottom:10px}
+    .message { margin-bottom: 10px; }
+    .user { position:relative; font-weight: bold; color: #333; border-radius: 5px; padding:10px; background:#fff;}
+
+
+.user::after {
+  content: '';
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 0px solid transparent;
+    border-top: 10px solid #fff;
+    bottom: -10px;
+    right: 6px;
+}
+
+    .assistant { color: #000; }
+    .history{opacity:.5}
+    .message p{margin:0;}
+
+    .loading:after {
+          overflow: hidden;
+          display: inline-block;
+          vertical-align: bottom;
+          -webkit-animation: ellipsis steps(4, end) 900ms infinite;
+          animation: ellipsis steps(4, end) 900ms infinite;
+          content: "\2026";
+          /* ascii code for the ellipsis character */
+          width: 0px;
+    }
+
+    @keyframes ellipsis {
+      to {
+        width: 40px;
+      }
+    }
+
+    @-webkit-keyframes ellipsis {
+      to {
+        width: 40px;
+      }
+    }
+
+</style>
+    <p>AI Coach</p>
+    <div id="chatBox" class="chat-box">
+        <div class="message assistant"><b>What do you need help with today?</b></div>
+    </div>
+    <form id="chatForm">
+        <textarea id="message" name="message" rows="4" placeholder="Enter your message here..."></textarea>
+        <span id="thread_id"></span>
+        <button type="submit"></button>
+    </form>
+<script src="./js/global.js"></script>
+<script>
+(function (){
+    const mgmt = TodoApp.cardManager;
+
+    const chatBox = document.getElementById('chatBox');
+    const chatForm = document.getElementById('chatForm');
+    const messageInput = document.getElementById('message');
+    let thread_id = localStorage.getItem('thread_id');
+
+    const getChatHistory = async (thread_id) => {
+        const loadingIndicator = document.createElement('div');
+        loadingIndicator.classList.add('loading');
+        loadingIndicator.textContent = 'Where did we last leave off';
+        chatBox.appendChild(loadingIndicator);
+        try {
+            const response = await fetch('https://goal-assist-db6b671f8857.herokuapp.com/history', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    thread_id
+                 })
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+
+            const data = await response.json(); // Parse the response as JSON
+            console.log(data); // Log the chat history data
+            if (data && data.data) {
+                const chatBox = document.querySelector('#chatBox'); // Chat box container
+                const fragment = document.createDocumentFragment(); // Create a fragment to batch appends
+                data.data.forEach(item => {
+                    const roleTxt = (item.role =='user')? 'You' : 'Assistant';
+                    const role = item.role;
+                    const message = item.content || 'No message available';
+                    // Create the message div
+                    const userMessageDiv = document.createElement('div');
+                    userMessageDiv.classList.add('message', role, 'history'); // Add classes
+                    userMessageDiv.innerHTML = `${message}`; // Set text content
+                    fragment.prepend(userMessageDiv);// add to the fragment
+                });
+
+                // Append all at once to the chat box
+                loadingIndicator.remove();
+                chatBox.prepend(fragment);
+                chatBox.scrollTop = chatBox.scrollHeight;
+            } else {
+                console.error('No chat data available.');
+            }
+
+        } catch (error) {
+            loadingIndicator.remove();
+            console.error('Error fetching chat history:', error);
+        }
+    };
+
+    //if thread_id is set
+    if(thread_id){
+        console.log('thread_id', thread_id);
+        document.querySelector('#thread_id').innerHTML = `thread: ${thread_id}`;
+        getChatHistory(thread_id);
+    }
+
+    chatForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const userMessage = messageInput.value.trim();
+        if (!userMessage) return;
+
+        thread_id = localStorage.getItem('thread_id');
+
+        // Display user's message
+        const userMessageDiv = document.createElement('div');
+        userMessageDiv.classList.add('message', 'user');
+        userMessageDiv.textContent = 'You: ' + userMessage;
+        chatBox.appendChild(userMessageDiv);
+
+        const loadingIndicator = document.createElement('div');
+        loadingIndicator.classList.add('loading');
+        loadingIndicator.textContent = 'Assistant: Typing';
+        chatBox.appendChild(loadingIndicator);
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        // Clear input
+        messageInput.value = '';
+        try {
+            const response = await fetch('https://goal-assist-db6b671f8857.herokuapp.com/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    message: userMessage,
+                    thread_id
+                })
+            });
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let assistantMessage = '';
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                assistantMessage += decoder.decode(value, { stream: true });
+            }
+            const parsedMessage = JSON.parse(assistantMessage);
+
+            // Store the thread_id in localStorage
+            if (!thread_id && parsedMessage.thread_id) {
+                document.querySelector('#thread_id').innerHTML = `thread: ${parsedMessage.thread_id}`;
+                localStorage.setItem('thread_id', parsedMessage.thread_id);
+            }
+            if(parsedMessage.data) {
+                if (Array.isArray(parsedMessage.data)) {
+                    for (const data of parsedMessage.data) {
+                        if (data.function === 'input_task') {
+                            const args = JSON.parse(data.args);
+                            await mgmt.copyTaskToList(args.task_type, '', args.task_name);
+                        }
+                    }
+                }
+                /*
+                parsedMessage.data.forEach((data, i) => {
+                    if(data.function == 'input_task'){
+                        const args = JSON.parse(data.args);
+                        mgmt.copyTaskToList(args.task_type, '', args.task_name);    
+                    }
+                });
+                */
+            }
+            if(parsedMessage.data) {
+                //we need to run a function
+                if(parsedMessage.data.function == 'input_task'){
+                    const args = JSON.parse(parsedMessage.data.args);
+                    await mgmt.copyTaskToList(args.task_type, '', args.task_name);    
+                }
+            }
+            if (parsedMessage.content) {
+                const assistantMessageDiv = document.createElement('div');
+                assistantMessageDiv.classList.add('message', 'assistant');
+                assistantMessageDiv.innerHTML = 'Assistant: ' + parsedMessage.content;
+                chatBox.appendChild(assistantMessageDiv);
+            }
+
+        } catch (error) {
+            console.error(error);
+            const errorMessageDiv = document.createElement('div');
+            errorMessageDiv.classList.add('message', 'assistant');
+            errorMessageDiv.textContent = 'Assistant: Error occurred. Please try again.';
+            loadingIndicator.remove();
+            chatBox.appendChild(errorMessageDiv);
+        } finally {
+            loadingIndicator.remove();
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    });
+})();
+</script>

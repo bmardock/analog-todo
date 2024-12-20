@@ -825,11 +825,13 @@ label.archive:hover { opacity: 0.8; }
     cursor: inherit;
 }
 
+#calendar .header{position: relative;}
 #calendar button{
     color:#000;
     cursor:pointer;
     position:absolute;
-    top:20px;
+    top:10px;
+    padding:0;
     transform: scaleY(2);
     background:transparent; border:none; font-weight: bold; display:inline-block;}
 #next-month {right:0;}

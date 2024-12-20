@@ -278,22 +278,26 @@ class TodoManager {
   }
   // Initialize the manager
   async init() {
+    //store name should only be todo, next, someday
     this.storeName = window.location.hash.slice(1) || document.querySelector('[name=listType]').value.toLowerCase();
     console.log('Database opened');
     document.documentElement.classList.remove('notes');
 
     if(this.storeName == 'todo'){ 
     	this.renderCalList();
-    } else{ 
+    }
+    if(this.storeName == 'next' || this.storeName == 'someday'){
     	this.recentList(); 
 	  }
     
-    if (document.querySelector('.picker').value) {
+    if (document.querySelector('.picker')?.value) { //if card name is set
       this.fetchAndRender();
-    } else if(this.storeName != 'todo'){
+    } else if(this.storeName == 'next' || this.storeName == 'someday'){ //otherwise get last row
       console.log('No name in URL. Fetching most recent card.');
       const lastRow = await this.getLastRow(this.storeName);
-      this.renderCard([lastRow]);
+      if(lastRow){
+        this.renderCard([lastRow]);
+      }
     }
   }
 }

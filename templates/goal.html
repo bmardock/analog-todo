@@ -16,12 +16,33 @@ a.info:hover {
     color: #000;
     text-decoration: underline;
 }
+a.sync{
+	text-align: right;
+	padding: 10px 25px 10px 0;	
+	display: inline-block;
+    background-image: url(./imgs/settings.svg);
+    background-size: 20px 20px;
+    background-repeat: no-repeat;
+    background-position: right;
+    position: absolute;
+    right: 0;
+    top: 2px;
+}
+a.coach{
+	text-align: right;
+	padding: 10px 25px 10px 0;	
+	display: inline-block;
+    background-image: url(./imgs/message-square.svg);
+    background-size: 20px 20px;
+    background-repeat: no-repeat;
+    background-position: right;
+}
 .cal-link{cursor:pointer; display:none;}
 </style>
 <header>
-	<a class="info" href="#info">Get started with the analog framework.</a>
+	<a class="info" title="learn how to use this app" href="#info">Get started with the analog framework.</a><a href="#export" class="sync" title="sync tasks between devices"></a>
 	<p>Set a goal for the week and define the best times to plan and review your progress.</p>
-	<p>What would make this week a success for you?</p>
+	<p>What would make this week a success for you? <a href="#coach" class="coach" title="use coach to help set a weekly goal"></a></p>
 </header>
 <main>
 	<textarea name="goal"/></textarea>

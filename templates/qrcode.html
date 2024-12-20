@@ -21,13 +21,13 @@
 
 </main>
   <!-- Include jsQR and QR Code libraries -->
+  <!-- //READ QR CODE -->
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+  <!-- //GEN QR CODE -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
-
   <script>
     const video = document.getElementById('video');
     const output = document.getElementById('output');
-
     async function startCamera() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
