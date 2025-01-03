@@ -57,6 +57,7 @@
 <script>
 (function (){
   //set the list of todos
+  console.log('set mgmt');
   const mgmt = TodoApp.cardManager;
   let hash = location.hash.slice(1) || 'today';
   hash = hash === 'todo' ? 'today' : hash;
@@ -118,7 +119,7 @@
           console.log('Unique Name:', uniqueName);
           // Update the input field with the unique name
           //target.value = uniqueName;
-          //document.querySelector('.picker').value = uniqueName;
+          document.querySelector('.picker').value = uniqueName;
           console.log('NAME', target.value);
           return
       } catch (error) {
@@ -126,9 +127,11 @@
       }
     }
     else{
+      console.log('picker change fetch and render');
       mgmt.fetchAndRender();
     }
   });
+  console.log('set picker');
   console.log(placeholderTxt);
   document.querySelector('.picker').placeholder = placeholderTxt;
 
@@ -196,24 +199,6 @@
   flippers[0].addEventListener("click", () => { mgmt.changeContent(1); });
   flippers[1].addEventListener("click", () => { mgmt.changeContent(-1); });
 
-  /*
-  //seems kinda clunky 
-  let touchStartX = 0;
-  let touchEndX = 0;
-  document.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].screenX; });
-  document.addEventListener('touchend', (e) => {
-    touchEndX = e.changedTouches[0].screenX;
-    const swipeThreshold = 150;
-    if (touchEndX > touchStartX + swipeThreshold) {
-      console.log("Swiped left to right");
-      mgmt.changeContent(-1);
-    } else if (touchStartX > touchEndX + swipeThreshold) {
-      console.log("Swiped right to left");
-      mgmt.changeContent(1);
-    }
-  });
-  */
-
   // Attach event listeners on keys
   document.addEventListener('keydown', (e) => {
       // Check if the focused element is an input, textarea, or contenteditable
@@ -226,6 +211,7 @@
           if (e.key === 'ArrowRight') { mgmt.changeContent(1); }
       }
   });
+  console.log('start mgmt');
   mgmt.setupTodos();
   mgmt.init();
 })();

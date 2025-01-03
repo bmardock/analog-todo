@@ -1,3 +1,15 @@
+<style>
+    #goals {position: absolute; top:70px; left:0}
+    #goals .week{margin:5px 0; font-size:14px;
+        margin: 20px 2px 40px;
+        cursor: pointer;
+        color:#ccc;
+    }
+    #goals .week.goal{color:#000;}
+    #goals .week.current{-webkit-text-stroke: 1px #000;}
+    #goals .week.future{color:white;}
+    main textarea{min-height: 180px; margin-bottom:10px;}
+</style>
 <div id="calendar">
     <div class="header">
         <button id="prev-month">&lt;</button>
@@ -14,33 +26,127 @@
         <div class="day_name">Sat</div>
     </div>
     <div id="month_days" class="days"></div>
+    <div id="goals"></div>
 </div>
+<main>
+    <p>Weekly goal for <span id="weekDate"></span></p>
+    <input type="hidden" name="weekId" />
+    <textarea name="goal"/></textarea>
+    <a href="#coach" class="coach" title="use coach to help set a weekly goal"></a>
+</main>
 <script src="./js/calendar.js"></script>
 <script>
-    //handle click on empty day
+(async function () {
+    // TODOs:
+    // 1. Clear goal text if month changes.
+    // 2. Reset to today's month on calendar footer click.
+    // 3. Provide a save confirmation for goal text.
+    // 4. Fix goal display issues on load.
+    // 5. Decide if editing past goals is allowed.
+    // 6. Decide if setting future goals is allowed.
+
+    const goalsContainer = document.querySelector('#goals');
+    const goalTextArea = document.querySelector('[name=goal]');
+    const weekIdInput = document.querySelector('[name=weekId]');
+    const weekDateSpan = document.getElementById('weekDate');
+    let weekGoals = await getWeeklyGoals();
+
+    // Navigate calendar months
+    document.getElementById('prev-month').addEventListener('click', () => navigateMonth(-1));
+    document.getElementById('next-month').addEventListener('click', () => navigateMonth(1));
+
     document.querySelector('#month_days').addEventListener("click", ({ target }) => {
         if (target.classList.contains('day_num')) {
             const url = `?date=${target.getAttribute('id')}#todo`;
-            window.history.pushState({}, '', url);
-            window.dispatchEvent(new Event("hashchange"));
+            updateURL(url);
         }
     });
-    document.getElementById('prev-month').addEventListener('click', () => {
-        date.setMonth(date.getMonth() - 1); // Go to the previous month
-        const newUrl = `?month=${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}#calendar`;
-        window.history.pushState({}, '', newUrl);
-        renderCalendar();
-        loadEvents(); // Reload events for the new month
+
+    goalsContainer.addEventListener('click', (event) => {
+        const weekDiv = event.target.closest('.week');
+        if (weekDiv) {
+            const week = weekDiv.getAttribute('data-week');
+            if (weekGoals.length > 0) {
+                showWeeklyGoal(week);
+            } else {
+                console.warn("Week goals are not yet loaded.");
+            }
+        }
     });
 
-    document.getElementById('next-month').addEventListener('click', () => {
-        date.setMonth(date.getMonth() + 1); // Go to the next month
-        const newUrl = `?month=${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}#calendar`;
-        window.history.pushState({}, '', newUrl);
-        renderCalendar();
-        loadEvents(); // Reload events for the new month
+    goalTextArea.addEventListener("change", async () => {
+        const goalText = goalTextArea.value;
+        const weekId = weekIdInput.value;
+        saveWeeklyGoal(weekId, goalText, null, null, readWeeklyGoal);
+        weekGoals = await getWeeklyGoals();
     });
-    // Initialize calendar and load events
-    renderCalendar();
-    loadEvents();
+
+    async function loadCalendar() {
+        renderCalendar();
+        loadEvents();
+
+        try {
+            populateGoals();
+        } catch (error) {
+            console.error("Error loading weekly goals:", error);
+        }
+    }
+
+    function navigateMonth(offset) {
+        date.setMonth(date.getMonth() + offset);
+        const newUrl = `?month=${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}#calendar`;
+        updateURL(newUrl);
+        loadCalendar();
+    }
+
+    function updateURL(newUrl) {
+        window.history.pushState({}, '', newUrl);
+        window.dispatchEvent(new Event("hashchange"));
+    }
+
+    function populateGoals() {
+        const currentWeek = getWeekIdentifier(new Date());
+        const weekList = getYearWeekArray(date.getFullYear(), (date.getMonth() + 1));
+        goalsContainer.innerHTML = '';
+
+        weekList.forEach((week) => {
+            const weekDiv = document.createElement('div');
+            weekDiv.setAttribute('data-week', week);
+            weekDiv.textContent = `★`;
+            weekDiv.className = `week ${week < currentWeek ? 'past' : week === currentWeek ? 'current' : 'future'}`;
+            if (weekGoals.some(result => result.week === week)) {
+                weekDiv.classList.add('goal');
+            }
+            goalsContainer.appendChild(weekDiv);
+        });
+    }
+
+    function getWeekDate(weekInfo) {
+        const [year, week] = weekInfo.split('-').map(Number);
+        const firstDayOfYear = new Date(Date.UTC(year, 0, 1));
+        const daysOffset = (week - 1) * 7;
+        const weekStart = new Date(firstDayOfYear.setDate(firstDayOfYear.getDate() + daysOffset));
+        const day = weekStart.getDay();
+        const sundayStart = new Date(weekStart.setDate(weekStart.getDate() - day));
+        return sundayStart.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    }
+
+    function showWeeklyGoal(week) {
+        if (weekGoals.length === 0) {
+            console.warn("Week goals are not yet loaded.");
+            return;
+        }
+
+        const weekDate = getWeekDate(week);
+        const matchingGoal = weekGoals.find(result => result.week === week);
+        goalTextArea.value = matchingGoal ? matchingGoal.goalText : '';
+        weekDateSpan.textContent = weekDate;
+        weekIdInput.value = week;
+    }
+
+    // Initialize calendar and goals
+    loadCalendar();
+    const currentWeek = getWeekIdentifier(new Date());
+    showWeeklyGoal(currentWeek);
+})();
 </script>

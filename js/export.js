@@ -25,7 +25,6 @@
         connectButton.disabled = !/^\d{3}-\d{3}$/.test(input.value);
     });
     connectButton.addEventListener('click', () => {
-        
         statusMessage.textContent = event.target.checked 
         ? "Waiting for another device to connect…" 
         : "Enter code and toggle the switch to connect.";
@@ -85,6 +84,7 @@
     //manually export
     document.getElementById('showData').addEventListener('click', () => {
         exportData().then((jsonData) => {
+            console.log(compressData(jsonData));
             document.getElementById('json').value = jsonData;
             document.getElementById('saveData').disabled = false;
         });

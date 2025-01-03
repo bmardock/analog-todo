@@ -53,7 +53,7 @@ a.coach{
 	<br/>
 	<a id="generate-ics" class="cal-link">Set calendar reminder<i class="calendar-icon"></i></a>
 </main>
-<script src="./js/goal.js"></script>
+<script src="./js/calendar.js"></script>
 <script>
 	document.querySelector('main').addEventListener("change", e => {
 		let goalText = document.querySelector('[name=goal]').value;
@@ -62,5 +62,6 @@ a.coach{
 		document.getElementById('generate-ics').style.display = (createTodos.length && reviewTodos.length) ? 'block' : 'none';
 		saveWeeklyGoal(goalText, createTodos, reviewTodos);
 	});
+	document.getElementById("generate-ics").addEventListener("click", generateICS );
 	readWeeklyGoal(renderGoals);
 </script>

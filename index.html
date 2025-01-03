@@ -40,102 +40,95 @@
     </div>
     <script>
         // Define routes and corresponding template files
-        const routes = {
-            blank: 'templates/blank.html',
-            goal: 'templates/goal.html',
-            todo: 'templates/card.html',
-            calendar: 'templates/calendar.html',
-            export: 'templates/export.html',
-            info: 'templates/info.html',
-            qrcode: 'templates/qrcode.html',
-            next: 'templates/card.html',
-            someday: 'templates/card.html',
-            coach: 'templates/coach.html',
-            remind: 'templates/reminder.html'
-        };
+ const routes = {
+    blank: 'templates/blank.html',
+    goal: 'templates/goal.html',
+    todo: 'templates/card.html',
+    calendar: 'templates/calendar.html',
+    export: 'templates/export.html',
+    info: 'templates/info.html',
+    qrcode: 'templates/qrcode.html',
+    next: 'templates/card.html',
+    someday: 'templates/card.html',
+    coach: 'templates/coach.html',
+    remind: 'templates/reminder.html'
+};
 
-        async function loadScriptsSequentially(scripts) {
-            for (const script of scripts) {
-                await new Promise((resolve, reject) => {
-                    const newScript = document.createElement('script');
-                    // If it's an external script, set the source and load it
-                    if (script.src) {
-                        const debug = true; // Set to false to enable caching
-                        const cacheBust = debug ? `?cacheBust=${Date.now()}` : '';
-                        newScript.src = script.src + cacheBust;
-                        newScript.async = false; // Ensure script executes in order
-                        newScript.onload = resolve; // Resolve the promise when loaded
-                        newScript.onerror = reject; // Reject if there's an error
-                    } else {
-                        // For inline scripts, set the content and resolve immediately
-                        newScript.textContent = script.textContent;
-                        resolve();
-                    }
-                    document.body.appendChild(newScript);
-                });
-            }
-        }
-
-        // Function to load the template based on the current route
-        function loadRoute() {
-            const route = (location.hash = location.hash || '#todo').slice(1);
-            const templatePath = routes[route];
-            document.querySelector('body').className = '';
-            // Fetch and display the template content
-            if (templatePath) {
-                fetch(templatePath)
-                    .then(response => response.ok ? response.text() : 'Page not found')
-                    .then(html => {
-                        const tempDiv = document.createElement('div');
-                        tempDiv.innerHTML = html;
-                        const scripts = Array.from(tempDiv.querySelectorAll('script')).filter(script => {
-                            if (script.src) {
-                                const srcWithoutQuery = script.src.split('?')[0]; // Normalize src by removing query parameters
-                                return ![...document.querySelectorAll('script')].some(existingScript =>
-                                    existingScript.src.split('?')[0] === srcWithoutQuery // Check if src matches any existing script
-                                );
-                            }
-                            return true;
-                        });
-                        document.getElementById('content').innerHTML = html;
-                        document.querySelector('body').className = route === 'todo' ? 'today' : route;
-                        
-                        // Load each script sequentially
-                        loadScriptsSequentially(scripts)
-                            .then(() => {
-                                console.log('All scripts loaded in sequence');
-                                // Optional: Call any functions or setup that depend on these scripts
-                            })
-                            .catch(error => console.error('Error loading script:', error));
-                    })
-                    .catch(error => console.error('Error loading page:', error));
+async function loadScripts(scripts) {
+    for (const script of scripts) {
+        await new Promise((resolve, reject) => {
+            const newScript = document.createElement('script');
+            if (script.src) {
+                const debug = false;
+                const cacheBust = debug ? `?cacheBust=${Date.now()}` : '';
+                newScript.src = script.src + cacheBust;
+                newScript.async = false; // Maintain execution order
+                newScript.onload = resolve;
+                newScript.onerror = reject;
             } else {
-                document.getElementById('content').innerHTML = 'Page not found';
+                newScript.textContent = script.textContent;
+                resolve();
             }
-        }
-        function trigger(eventName, detail = {}) {
-            const event = new CustomEvent(eventName, { detail });
-            document.dispatchEvent(event);
-        }
+            document.body.appendChild(newScript);
+        });
+    }
+}
 
-        // Event listener for hash changes
-        window.addEventListener('hashchange', loadRoute);
-        document.querySelector('footer').addEventListener('click', ({target}) => {
-            const link = target.closest('a').href;
-            if (link) {
-                const route = link.split('#').slice(-1)[0];
-                //remove any query params
-                const currentUrl = window.location;
-                // Remove query parameters and keep only the path
-                const newUrl = currentUrl.origin + currentUrl.pathname + "#" + route;
-                // Update the URL without reloading the page
-                window.history.pushState(null, '', newUrl);
-                window.dispatchEvent(new Event("hashchange"));
-            }
-        });
-        databaseOpen(() => {
-            loadRoute();
-        });
+async function loadRoute() {
+    const route = (location.hash = location.hash || '#todo').slice(1);
+    const templatePath = routes[route];
+    const content = document.getElementById('content');
+    document.body.className = route === 'todo' ? 'today' : route;
+
+    if (templatePath) {
+        try {
+            const response = await fetch(templatePath);
+            if (!response.ok) throw new Error('Page not found');
+            const html = await response.text();
+
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+
+            const uniqueScripts = Array.from(tempDiv.querySelectorAll('script')).filter(script => {
+                if (!script.src) return true;
+                const src = script.src.split('?')[0];
+                return ![...document.querySelectorAll('script')].some(existing => existing.src.split('?')[0] === src);
+            });
+
+            content.innerHTML = html;
+            await loadScripts(uniqueScripts);
+            console.log('All scripts loaded in sequence');
+        } catch (error) {
+            console.error('Error loading route:', error);
+            content.innerHTML = `<p>Error: ${error.message}</p>`;
+        }
+    } else {
+        content.innerHTML = '<p>Page not found</p>';
+    }
+}
+
+function trigger(eventName, detail = {}) {
+    document.dispatchEvent(new CustomEvent(eventName, { detail }));
+}
+
+function handleFooterClick(event) {
+    const link = event.target.closest('a');
+    if (link && link.href) {
+        const route = link.href.split('#').pop();
+        const { origin, pathname } = window.location;
+        const newUrl = `${origin}${pathname}#${route}`;
+        window.history.pushState(null, '', newUrl);
+        window.dispatchEvent(new Event('hashchange'));
+    }
+}
+
+// Event listeners
+window.addEventListener('hashchange', loadRoute);
+document.querySelector('footer').addEventListener('click', handleFooterClick);
+
+// Initialize app
+databaseOpen(loadRoute);
+
     </script>
 </body>
 </html>

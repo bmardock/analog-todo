@@ -2,7 +2,7 @@ if (!window.TodoApp || !window.TodoApp.cardManager) {
 class TodoManager {
   constructor() {
     this.storeName = '';
-    this.init();
+    //this.init();
   }
 
   setupTodos = () => {
@@ -32,7 +32,7 @@ class TodoManager {
   // Fetch list data based on archive status and populate a container
   async fetchListData(archivedStatus, containerSelector) {
     const container = document.querySelector(containerSelector);
-    console.log('fetchListData', this.storeName);
+    console.log('fetchListData', 'archive:', archivedStatus, this.storeName);
     try {
       const rows = await getAllFromStore(this.storeName, 'archived', archivedStatus);
       rows.sort((a, b) => a.lastUpdated - b.lastUpdated); // Sort rows
@@ -156,12 +156,6 @@ class TodoManager {
     const data = this.getDataFromDOM();
     console.log(data);
     this.saveList(data, () => {
-      if(this.storeName == 'todo'){
-        console.log('rerender Cal list');
-        this.renderCalList();
-      } else{
-        this.recentList();
-      }
       this.fetchAndRender();
     });
   }
@@ -175,6 +169,9 @@ class TodoManager {
     if(this.storeName == 'todo'){
         console.log('rerender Cal list');
         this.renderCalList();
+    } else{
+        console.log('rerender Recent list');
+        this.recentList();
     }
     this.fetchCard(key, value, this.renderCard.bind(this));
   }
@@ -283,13 +280,6 @@ class TodoManager {
     console.log('Database opened');
     document.documentElement.classList.remove('notes');
 
-    if(this.storeName == 'todo'){ 
-    	this.renderCalList();
-    }
-    if(this.storeName == 'next' || this.storeName == 'someday'){
-    	this.recentList(); 
-	  }
-    
     if (document.querySelector('.picker')?.value) { //if card name is set
       this.fetchAndRender();
     } else if(this.storeName == 'next' || this.storeName == 'someday'){ //otherwise get last row
@@ -297,6 +287,7 @@ class TodoManager {
       const lastRow = await this.getLastRow(this.storeName);
       if(lastRow){
         this.renderCard([lastRow]);
+        this.recentList();
       }
     }
   }
