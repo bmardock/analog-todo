@@ -5,13 +5,14 @@
   </div>
     <div class="code-container">
         <input type="tel" maxlength="7" id="code-input" pattern="[0-9]{3}-[0-9]{3}"placeholder="123-456" />
-        <button id="generateButton">&#8634;</button>
+        <button id="generateButton"></button>
+        <button id="connectButton"></button>
     </div>
     <div class="controls">
-            <label class="switch">
+        <!-- label class="switch">
           <input type="checkbox" id="connectButton" disabled>
           <span class="slider"></span>
-        </label>
+        </label -->
         <button id="syncButton" disabled>Sync</button>
     </div>
     <div id="userCount"></div>
@@ -25,3 +26,117 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.0.4/pako.min.js"></script>
 <script src="//shopboardwalkvintage.com/js/socket.io.min.js"></script>
 <script src="./js/export.js"></script>
+<script>
+  ( function(){
+    const container = document.querySelector('.code-container');
+    const codeInput = document.getElementById('code-input');
+    const generateButton = document.getElementById('generateButton');
+    const syncButton = document.getElementById('syncButton');
+    const connectButton = document.getElementById('connectButton');
+    const statusMessage = document.getElementById('status-message');
+
+    connectButton.style.visibility = 'hidden';
+    let socket = null;
+    generateButton.addEventListener('click', () => {
+        const randomCode = `${Math.floor(100 + Math.random() * 900)}-${Math.floor(100 + Math.random() * 900)}`;
+        codeInput.value = randomCode;
+        connectButton.style.visibility = 'visible';
+    });
+    codeInput.addEventListener("input", function (event) {
+        let input = event.target;
+        let value = input.value.replace(/\D/g, ""); // Remove any non-digit characters
+        // Format as XXX-XXX
+        if (value.length > 3) { value = value.slice(0, 3) + "-" + value.slice(3, 6); }
+        input.value = value;
+        connectButton.style.visibility = (/^\d{3}-\d{3}$/.test(input.value)) ? 'visible' : 'hidden';
+
+    });
+    connectButton.addEventListener('click', () => {
+        statusMessage.textContent = event.target.checked 
+        ? "Waiting for another device to connect…" 
+        : "Enter code and toggle the switch to connect.";
+        
+        const code = codeInput.value;
+        syncButton.disabled = true;
+        // Validate code format
+        if (/^\d{3}-\d{3}$/.test(code)) {
+            codeInput.style.display = 'hidden';
+            if (socket && socket.connected) {
+                console.log("Disconnecting existing socket connection...");
+                socket.disconnect(); // Disconnect the existing socket connection
+                generateButton.style.display = 'block';
+                container.classList.remove('connected');
+                codeInput.readOnly = false;
+                syncButton.disabled = true;
+                return
+            }
+            socket = io(`https://bw-socket-test.herokuapp.com/${code}`);
+            socket.on('connect', () => {
+                console.log(`Connected with namespace: /${code}`);
+                generateButton.style.display = 'none';
+                container.classList.add('connected');
+                codeInput.readOnly = true;
+            });
+            socket.on('userCount', (count) => {
+                let userMsg = '';
+                if(count > 1){
+                    statusMessage.innerHTML = `Connected with ${count - 1} other device${count - 1 === 1 ? '' : 's'}.<br>Click 'Sync' to send data.`;
+                    syncButton.disabled = false;
+                }else{
+                    statusMessage.innerHTML = "Waiting for another device to connect…";
+                    syncButton.disabled = true;
+                }
+                document.getElementById('userCount').textContent = userMsg;
+            });
+            socket.on('sync', (compressedData) => {
+                msg('sync request');
+                const jsonData = decompressData(decodeURIComponent(compressedData));
+                msg("Decompressed JSON Data:");
+                console.log(jsonData);
+                importData(jsonData).then(() => {
+                    msg("Import completed!");
+                });
+            });
+        }
+    });
+    //export to others
+  syncButton.addEventListener('click', () => {
+      msg('sending export');
+      exportData().then((jsonData) => {
+          const compressedData = compressData(jsonData);
+          const encodedData = encodeURIComponent(compressedData);
+      socket.emit('sync', encodedData);
+    });
+  });
+
+    //manually export
+    document.getElementById('showData').addEventListener('click', () => {
+        exportData().then((jsonData) => {
+            console.log(compressData(jsonData));
+            document.getElementById('json').value = jsonData;
+            document.getElementById('saveData').disabled = false;
+        });
+    });
+    //validate json before saving
+    document.getElementById('json').addEventListener('change', ({ target }) => {
+        const isValidJSON = (value) => { 
+            try {
+                JSON.parse(value);
+                return true;
+            } catch {
+                return false;
+            }
+        };
+        document.getElementById('saveData').disabled = !isValidJSON(target.value);
+    });
+    //manually import
+    document.getElementById('saveData').addEventListener('click', () => {
+        jsonData = document.getElementById('json').value;
+        msg('saveData');
+        msg(jsonData);
+        importData(jsonData).then(() => {
+            msg("Import completed!");
+        });
+    });
+  })();
+</script>

@@ -1,19 +1,4 @@
-    const urlParams = new URLSearchParams(window.location.search);
-    const monthParam = urlParams.get('month');
-    let date;
-
-    if (monthParam) {
-        // Parse the month parameter, assume it's in "YYYY-MM" format
-        const [year, month] = monthParam.split('-').map(Number);
-        date = new Date(year, month - 1); // Adjust for zero-based month index
-    } else {
-        date = new Date(); // Default to the current date
-    }
-
-    const [month, year, today] = [date.getMonth(), date.getFullYear(), date.getDate()];
-    const [preDay, endMonth] = [new Date(year, month, 1).getDay(), new Date(year, month + 1, 0).getDate()];
-
-    const renderCalendar = () => {
+    const renderCalendar = (date = new Date()) => {
         const today = new Date();
         const month = date.getMonth();
         const year = date.getFullYear();

@@ -52,7 +52,7 @@
 	input {border: none; border-bottom: 1px solid rgba(0, 0, 0, 0.3); background: transparent}
 	input:focus {border: none; border-bottom: 2px solid #000; outline: none; color:rgba(0, 0, 0, 0.6);}
 	
-	header {position: relative;}
+	header {position: relative; display:flex;}
 	header .listType{
 		border:none;
 		font-size: 18px;
@@ -500,26 +500,60 @@ a.coach{
   transition: border-color 0.3s, background-color 0.3s;
 }
 
-#code-input.connected {
-  border-color: #28a745;
-  background:#e8f2eb;
-}
-
 #generateButton {
-    position: absolute;
-    top:2px;
-    right:0;
-    font-size: 30px;
+	cursor:pointer;
+  position: absolute;
+  top:14px;
+  left:10px;
+  height:20px;
+  width:20px;
   cursor: pointer;
   background: none;
   border: none;
   color: #333;
   transition: color 0.3s;
+
+  background-image: url(./imgs/share-2.svg);
+  background-size: 20px 20px;
+  background-repeat: no-repeat;
+  background-position: right;
+
+  transition: background-color 0.3s;
+
 }
 
-#generateButton:hover {
-  color: #007bff;
+#connectButton {
+	cursor:pointer;
+  position: absolute;
+  top:14px;
+  right:10px;
+  height:20px;
+  width:20px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: #333;
+  transition: color 0.3s;
+
+  background-image: url(./imgs/toggle-left.svg);
+  background-size: 20px 20px;
+  background-repeat: no-repeat;
+  background-position: right;
+
+  transition: background-color 0.3s;
 }
+.connected #connectButton{
+	background-image: url(./imgs/toggle-right.svg);
+}
+.connected #generateButton{
+	display:hidden;
+}
+
+.connected #code-input {
+  border-color: #28a745;
+  background:#e8f2eb;
+}
+
 
 /* Switch styling */
 .switch {
@@ -824,16 +858,18 @@ label.archive:hover { opacity: 0.8; }
     background-color: #fdfdfd;
     border-radius: 5px;
 }
-#calendar .days .day_num.ignore {
-    background-color: transparent;
-    color: #ced2d4;
-    cursor: inherit;
-}
 #calendar .days .day_num.selected {
     background-color: #fff;
     color:#333;
     cursor: inherit;
 }
+#calendar .days .day_num.ignore {
+    background-color: transparent;
+    color: transparent;
+    cursor: inherit;
+}
+#calendar .days .day_num.ignore svg{display:none;}
+
 
 #calendar .header{position: relative;}
 #calendar button{

@@ -29,19 +29,29 @@
     <div id="goals"></div>
 </div>
 <main>
+<<<<<<< HEAD
     <p>Weekly goal for <span id="weekDate"></span></p>
     <input type="hidden" name="weekId" />
     <textarea name="goal"/></textarea>
     <a href="#coach" class="coach" title="use coach to help set a weekly goal"></a>
+=======
+    <p>Weekly goal for <span id="weekDate"></span><a href="#coach" class="coach" title="use coach to help set a weekly goal"></a></p>
+    <input type="hidden" name="weekId" />
+    <textarea name="goal" placeholder="What would make this week a success for you?" /></textarea>
+>>>>>>> fdaf486 (grabbed latest from bwalk)
 </main>
 <script src="./js/calendar.js"></script>
 <script>
 (async function () {
     // TODOs:
     // 1. Clear goal text if month changes.
+<<<<<<< HEAD
     // 2. Reset to today's month on calendar footer click.
     // 3. Provide a save confirmation for goal text.
     // 4. Fix goal display issues on load.
+=======
+    // 3. Provide a save confirmation for goal text.
+>>>>>>> fdaf486 (grabbed latest from bwalk)
     // 5. Decide if editing past goals is allowed.
     // 6. Decide if setting future goals is allowed.
 
@@ -51,10 +61,22 @@
     const weekDateSpan = document.getElementById('weekDate');
     let weekGoals = await getWeeklyGoals();
 
+<<<<<<< HEAD
     // Navigate calendar months
     document.getElementById('prev-month').addEventListener('click', () => navigateMonth(-1));
     document.getElementById('next-month').addEventListener('click', () => navigateMonth(1));
 
+=======
+    const urlParams = new URLSearchParams(window.location.search);
+    const monthParam = urlParams.get('month');
+    const date = monthParam 
+        ? new Date(`${monthParam}-01`) // Append day for a valid date string
+        : new Date();
+
+    // Navigate calendar months
+    document.getElementById('prev-month').addEventListener('click', () => navigateMonth(-1));
+    document.getElementById('next-month').addEventListener('click', () => navigateMonth(1));
+>>>>>>> fdaf486 (grabbed latest from bwalk)
     document.querySelector('#month_days').addEventListener("click", ({ target }) => {
         if (target.classList.contains('day_num')) {
             const url = `?date=${target.getAttribute('id')}#todo`;
@@ -77,14 +99,23 @@
     goalTextArea.addEventListener("change", async () => {
         const goalText = goalTextArea.value;
         const weekId = weekIdInput.value;
+<<<<<<< HEAD
+=======
+        console.log("Saving goal for week:", weekId, "with text:", goalText);
+>>>>>>> fdaf486 (grabbed latest from bwalk)
         saveWeeklyGoal(weekId, goalText, null, null, readWeeklyGoal);
         weekGoals = await getWeeklyGoals();
     });
 
     async function loadCalendar() {
+<<<<<<< HEAD
         renderCalendar();
         loadEvents();
 
+=======
+        renderCalendar(date);
+        loadEvents();
+>>>>>>> fdaf486 (grabbed latest from bwalk)
         try {
             populateGoals();
         } catch (error) {
@@ -108,7 +139,10 @@
         const currentWeek = getWeekIdentifier(new Date());
         const weekList = getYearWeekArray(date.getFullYear(), (date.getMonth() + 1));
         goalsContainer.innerHTML = '';
+<<<<<<< HEAD
 
+=======
+>>>>>>> fdaf486 (grabbed latest from bwalk)
         weekList.forEach((week) => {
             const weekDiv = document.createElement('div');
             weekDiv.setAttribute('data-week', week);
@@ -132,6 +166,7 @@
     }
 
     function showWeeklyGoal(week) {
+<<<<<<< HEAD
         if (weekGoals.length === 0) {
             console.warn("Week goals are not yet loaded.");
             return;
@@ -142,11 +177,33 @@
         goalTextArea.value = matchingGoal ? matchingGoal.goalText : '';
         weekDateSpan.textContent = weekDate;
         weekIdInput.value = week;
+=======
+        const currentWeek = getWeekIdentifier(new Date());
+        console.log("Current week:", currentWeek);
+        // If week is not provided or is falsy, use currentWeek
+        const targetWeek = week || currentWeek;
+        const weekDate = getWeekDate(targetWeek);
+        const matchingGoal = weekGoals.find(result => result.week === targetWeek);
+        goalTextArea.value = matchingGoal ? matchingGoal.goalText : '';
+        weekDateSpan.textContent = weekDate;
+        weekIdInput.value = targetWeek;
+
+        // Check if targetWeek is the current week
+        if (targetWeek === currentWeek) {
+            console.log("This is the current week.");
+        } else {
+            console.log("This is not the current week.");
+        }
+>>>>>>> fdaf486 (grabbed latest from bwalk)
     }
 
     // Initialize calendar and goals
     loadCalendar();
+<<<<<<< HEAD
     const currentWeek = getWeekIdentifier(new Date());
     showWeeklyGoal(currentWeek);
+=======
+    showWeeklyGoal();
+>>>>>>> fdaf486 (grabbed latest from bwalk)
 })();
 </script>

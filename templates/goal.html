@@ -1,4 +1,5 @@
 <style>
+header {display:block}
 a.info {
     color: #666;
     -webkit-text-stroke: 0.5px #666;
@@ -56,11 +57,12 @@ a.coach{
 <script src="./js/calendar.js"></script>
 <script>
 	document.querySelector('main').addEventListener("change", e => {
-		let goalText = document.querySelector('[name=goal]').value;
-		let createTodos = document.querySelector('[name=start]').value;
-		let reviewTodos = document.querySelector('[name=review]').value;
+		const goalText = document.querySelector('[name=goal]').value;
+		const createTodos = document.querySelector('[name=start]').value;
+		const reviewTodos = document.querySelector('[name=review]').value;
+		const currentWeek = getWeekIdentifier(new Date());
 		document.getElementById('generate-ics').style.display = (createTodos.length && reviewTodos.length) ? 'block' : 'none';
-		saveWeeklyGoal(goalText, createTodos, reviewTodos);
+		saveWeeklyGoal(currentWeek, goalText, createTodos, reviewTodos);
 	});
 	document.getElementById("generate-ics").addEventListener("click", generateICS );
 	readWeeklyGoal(renderGoals);

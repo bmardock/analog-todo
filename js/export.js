@@ -1,11 +1,30 @@
-( function(){
+function compressData(jsonData) {
+    // Compress JSON string with pako (Gzip)
+    const jsonString = JSON.stringify(jsonData);
+    // Compress JSON string with pako (Gzip)
+    const compressed = pako.gzip(jsonString);
+    // Convert the compressed data to Base64 for QR code compatibility
+    return btoa(String.fromCharCode(...new Uint8Array(compressed)));
+}
 
-    const codeInput = document.getElementById('code-input');
-    const generateButton = document.getElementById('generateButton');
-    const syncButton = document.getElementById('syncButton');
-    const connectButton = document.getElementById('connectButton');
-    const statusMessage = document.getElementById('status-message');
+function decompressData(compressedData) {
+    // Decode Base64 string to binary string
+    const binaryString = atob(compressedData);
+    // Convert binary string to Uint8Array for decompression
+    const charData = binaryString.split('').map(char => char.charCodeAt(0));
+    const binData = new Uint8Array(charData);
+    // Decompress using pako and parse JSON
+    const decompressedString = pako.ungzip(binData, { to: 'string' });
+    // Convert the decompressed JSON string back into a JavaScript object
+    return JSON.parse(decompressedString);
+}
+function msg(text){
+    const msgConsole = document.getElementById("msgs");
+    msgConsole.value += text + '\n';
+    console.log(text);
+}
 
+<<<<<<< HEAD
     let socket = null;
     checkDatabaseVersion();
     databaseOpen(() => {
@@ -41,23 +60,53 @@
                 codeInput.readOnly = false;
                 syncButton.disabled = true;
                 return
+=======
+function exportData() {
+    return Promise.all([getAllFromStore('todo'), getAllFromStore('next'), getAllFromStore('someday'), getAllFromStore('weeklyGoals')])
+        .then(([todoData, nextData, somedayData, weeklyGoalsData ]) => {
+            return JSON.stringify({ 
+                todo: todoData,
+                next: nextData,
+                someday: somedayData,
+                weeklyGoals: weeklyGoalsData });
+        });
+}
+
+ async function importData(jsonData) {
+    const data = JSON.parse(jsonData);
+    const promises = [];
+    
+    async function mergeAndSave(type, newData) {
+        const existingData = await getAllFromStore(type) || [];
+
+        const identifierKey = {
+            todo: 'date',
+            next: 'name',
+            someday: 'name',
+            weeklyGoals: 'week',
+        }[type];
+
+        for (const newItem of newData) {
+            if (!newItem[identifierKey]) {
+                console.error(`Error: Missing required key (${identifierKey}) in new ${type} item:`, newItem);
+                msg(`Error: Missing key (${identifierKey}) in ${type}`);
+                continue; // Skip items without the required key
+>>>>>>> fdaf486 (grabbed latest from bwalk)
             }
-            socket = io(`https://bw-socket-test.herokuapp.com/${code}`);
-            socket.on('connect', () => {
-                console.log(`Connected with namespace: /${code}`);
-                generateButton.style.display = 'none';
-                codeInput.classList.add('connected');
-                codeInput.readOnly = true;
-            });
-        	socket.on('userCount', (count) => {
-                let userMsg = '';
-                if(count > 1){
-                    statusMessage.innerHTML = `Connected with ${count - 1} other device${count - 1 === 1 ? '' : 's'}.<br>Click 'Sync' to send data.`;
-                    syncButton.disabled = false;
-                }else{
-                    statusMessage.innerHTML = "Waiting for another device to connect…";
-                    syncButton.disabled = true;
+
+            const isDuplicate = existingData.some(existingItem => existingItem[identifierKey] === newItem[identifierKey]);
+
+            if (isDuplicate) {
+                msg(`Skipped: Duplicate ${type} entry for ${identifierKey}: ${newItem[identifierKey]}`);
+            } else {
+                try {
+                    await saveToStore(type, newItem); // Save individual item
+                    msg(`Added: New ${type} entry for ${identifierKey}: ${newItem[identifierKey]}`);
+                } catch (error) {
+                    console.error(`Failed to save ${type} item:`, newItem, error);
+                    msg(`Error saving ${type} entry for ${identifierKey}: ${newItem[identifierKey]}`);
                 }
+<<<<<<< HEAD
                 document.getElementById('userCount').textContent = userMsg;
             });
         	socket.on('sync', (compressedData) => {
@@ -97,67 +146,18 @@
                 return true;
             } catch {
                 return false;
+=======
+>>>>>>> fdaf486 (grabbed latest from bwalk)
             }
-        };
-        document.getElementById('saveData').disabled = !isValidJSON(target.value);
-    });
-    //manually import
-    document.getElementById('saveData').addEventListener('click', () => {
-        jsonData = document.getElementById('json').value;
-        msg('saveData');
-        console.log(jsonData);
-        importData(jsonData).then(() => {
-            msg("Import completed!");
-        });
+        }
+    }
+
+    // Process each type of data
+    ['todo', 'next', 'someday', 'weeklyGoals'].forEach(type => {
+        if (data[type]) {
+            promises.push(mergeAndSave(type, data[type]));
+        }
     });
 
-    function compressData(jsonData) {
-        // Compress JSON string with pako (Gzip)
-        const jsonString = JSON.stringify(jsonData);
-        // Compress JSON string with pako (Gzip)
-        const compressed = pako.gzip(jsonString);
-        // Convert the compressed data to Base64 for QR code compatibility
-        return btoa(String.fromCharCode(...new Uint8Array(compressed)));
-    }
-
-    function decompressData(compressedData) {
-        // Decode Base64 string to binary string
-        const binaryString = atob(compressedData);
-        // Convert binary string to Uint8Array for decompression
-        const charData = binaryString.split('').map(char => char.charCodeAt(0));
-        const binData = new Uint8Array(charData);
-        // Decompress using pako and parse JSON
-        const decompressedString = pako.ungzip(binData, { to: 'string' });
-        // Convert the decompressed JSON string back into a JavaScript object
-        return JSON.parse(decompressedString);
-    }
-    function msg(text){
-        const msgConsole = document.getElementById("msgs");
-        msgConsole.value += text + '\n';
-        console.log(text);
-    }
-
-
-    function exportData() {
-        return Promise.all([getAllFromStore('todo'), getAllFromStore('next'), getAllFromStore('someday'), getAllFromStore('weeklyGoals')])
-            .then(([todoData, nextData, somedayData, weeklyGoalsData ]) => {
-                return JSON.stringify({ 
-                    todo: todoData,
-                    next: nextData,
-                    someday: somedayData,
-                    weeklyGoals: weeklyGoalsData });
-            });
-    }
-
-    function importData(jsonData) {
-        const data = JSON.parse(jsonData);
-        const promises = [];
-        if (data.todo) {
-            data.todo.forEach(item => promises.push(saveToStore('todo', item)));
-        }
-        if (data.weeklyGoals) {
-            data.weeklyGoals.forEach(item => promises.push(saveToStore('weeklyGoals', item)));
-        }
-        return Promise.all(promises);
-    }
-})();
+    return Promise.all(promises);
+}

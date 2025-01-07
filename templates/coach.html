@@ -1,4 +1,8 @@
 <style>
+    h2{font:GTPressuraMonoLight, Avenir Next, Helvetica Neue, Helvetica, Arial, sans-serif;
+        font-size:16px; font-weight: normal; color:rgb(0,0,0,0.6);
+        margin-bottom:5px;
+    }
     #thread_id{font-size:10px;}
     textarea { font-size:14px; width: 95%; border: 1px solid #ddd; border-radius: 5px; resize: none; padding:10px;}
     #chatForm {padding:0 0 40px 0; position:relative;}
@@ -20,8 +24,6 @@
     .chat-box { max-height: 450px; overflow-y: auto; margin-bottom:10px}
     .message { margin-bottom: 10px; }
     .user { position:relative; font-weight: bold; color: #333; border-radius: 5px; padding:10px; background:#fff;}
-
-
 .user::after {
   content: '';
     position: absolute;
@@ -62,7 +64,7 @@
     }
 
 </style>
-    <p>AI Coach</p>
+    <h2 class="title">AI Coach</h2>
     <div id="chatBox" class="chat-box">
         <div class="message assistant"><b>What do you need help with today?</b></div>
     </div>
