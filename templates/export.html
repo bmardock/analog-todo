@@ -1,3 +1,23 @@
+<style>
+    .data .data-container{display:none;}
+    .data.open .data-container{display:block;}
+    #showData {
+        background:transparent;
+        margin:0; padding:0; position:relative; font-size:14px; font-weight: normal;
+        color:rgba(0, 0, 0, 0.6);
+        cursor:pointer;
+        font-family:GTPressuraMonoLight, Avenir Next, Helvetica Neue, Helvetica, Arial, sans-serif;
+    }
+    #showData:after {
+        content: "▼"; /* Default down arrow */
+        font-size: 12px;
+        margin-left: 20px; /* Space between text and arrow */
+        transition: transform 0.8s ease;
+    }
+    .open #showData::after {
+        content: "▲"; /* Up arrow */
+    }
+</style>
 <main>
   <div class="status">
     <p>Sync data with other device.</p>
@@ -9,18 +29,16 @@
         <button id="connectButton"></button>
     </div>
     <div class="controls">
-        <!-- label class="switch">
-          <input type="checkbox" id="connectButton" disabled>
-          <span class="slider"></span>
-        </label -->
         <button id="syncButton" disabled>Sync</button>
     </div>
     <div id="userCount"></div>
 	<textarea id="msgs"></textarea>
-    <textarea id="json"></textarea>
-    <div class="controls">
-        <button id="showData">Show Data</button>
-        <button id="saveData" disabled>Save Data</button>
+    <div class="data">
+        <h2 id="showData">Show Data</h2>
+        <div class="data-container">
+            <textarea id="json"></textarea>
+            <button id="saveData" disabled>Save Data</button>
+        </div>
     </div>
 </main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.0.4/pako.min.js"></script>
@@ -111,6 +129,7 @@
 
     //manually export
     document.getElementById('showData').addEventListener('click', () => {
+        document.querySelector('.data').classList.toggle('open');
         exportData().then((jsonData) => {
             console.log(compressData(jsonData));
             document.getElementById('json').value = jsonData;

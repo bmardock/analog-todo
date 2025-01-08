@@ -20,16 +20,18 @@
     };
 
     const renderEvents = (eventDetails) => {
-        eventDetails.forEach(({ date, cardSignal }) => {
+        console.log('render events:', eventDetails);
+        eventDetails.forEach(({ date, cardSignal, braindump }) => {
             const dayElement = document.getElementById(date);
 
             if (dayElement) {
                 const svg = `
-                    <svg xmlns="http://www.w3.org/2000/svg" width="8" height="26" viewBox="0 0 6 26" fill="none">
-                        <circle cx="3" cy="6" r="3" fill="${cardSignal[0] ? '#000' :'#ccc' }"/>
-                        <circle cx="3" cy="14" r="3" fill="${cardSignal[1] ? '#000' :'#ccc'}"/>
-                        <circle cx="3" cy="22" r="3" fill="${cardSignal[2] ? '#000' :'#ccc'}"/>
-                    </svg>`;
+                <svg xmlns="http://www.w3.org/2000/svg" width="8" height="42" viewBox="0 0 6 42" fill="none">
+                    ${braindump ? '<circle cx="3" cy="6" r="3" fill="#666"/>' : ''}
+                    <circle cx="3" cy="22" r="3" fill="${cardSignal[0] ? '#000' :'#ccc' }"/>
+                    <circle cx="3" cy="30" r="3" fill="${cardSignal[1] ? '#000' :'#ccc'}"/>
+                    <circle cx="3" cy="38" r="3" fill="${cardSignal[2] ? '#000' :'#ccc'}"/>
+                </svg>`;
                 dayElement.innerHTML += svg;
             }
         });
@@ -39,7 +41,7 @@
             .then(list => {
                 // Create a unique set of date and cardSignal pairs
                 const eventDetails = [
-                    ...new Set(list.map(({ date, cardSignal }) => JSON.stringify({ date, cardSignal })))
+                    ...new Set(list.map(({ date, cardSignal, braindump }) => JSON.stringify({ date, cardSignal, braindump })))
                 ].map(item => JSON.parse(item));
 
                 renderEvents(eventDetails); // Pass the array of objects to renderEvents
