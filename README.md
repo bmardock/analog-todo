@@ -66,3 +66,11 @@ Capture ideas, aspirations, and goals that you would like to accomplish someday.
 ## V4. Task Assistant
 - Add an interface for a chatbot to assist user in defining and accomplishing goals.
 - Set reminders, create tasks for user based on conversation.
+
+
+## to run locally
+- clone repo
+- cd to folder
+- npm install -g http-server
+- http-server
+http://127.0.0.1:8080/
