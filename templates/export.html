@@ -1,4 +1,8 @@
 <style>
+    .code-container #connectButton{visibility: hidden;}
+    .code-container.validCode #connectButton{visibility: visible;}
+    .code-container.connected #generateButton{visibility: hidden;}
+
     #msgs{height:350px; transition: height 0.3s ease;}
     #msgs.hide{height:60px;}
     .data .data-container{display:none;}
@@ -55,12 +59,13 @@
     const connectButton = document.getElementById('connectButton');
     const statusMessage = document.getElementById('status-message');
 
-    connectButton.style.visibility = 'hidden';
+    //connectButton.style.visibility = 'hidden';
     let socket = null;
     generateButton.addEventListener('click', () => {
         const randomCode = `${Math.floor(100 + Math.random() * 900)}-${Math.floor(100 + Math.random() * 900)}`;
         codeInput.value = randomCode;
-        connectButton.style.visibility = 'visible';
+        container.classList.add('validCode');
+        //connectButton.style.visibility = 'visible';
     });
     codeInput.addEventListener("input", function (event) {
         let input = event.target;
@@ -68,7 +73,9 @@
         // Format as XXX-XXX
         if (value.length > 3) { value = value.slice(0, 3) + "-" + value.slice(3, 6); }
         input.value = value;
-        connectButton.style.visibility = (/^\d{3}-\d{3}$/.test(input.value)) ? 'visible' : 'hidden';
+        const isValidCode = /^\d{3}-\d{3}$/.test(input.value);
+        container.classList.toggle('validCode', isValidCode);
+        //connectButton.style.visibility = isValidCode ? 'visible' : 'hidden';
 
     });
     connectButton.addEventListener('click', () => {
