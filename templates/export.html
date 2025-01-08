@@ -1,4 +1,6 @@
 <style>
+    #msgs{height:350px; transition: height 0.3s ease;}
+    #msgs.hide{height:60px;}
     .data .data-container{display:none;}
     .data.open .data-container{display:block;}
     #showData {
@@ -19,10 +21,10 @@
     }
 </style>
 <main>
-  <div class="status">
-    <p>Sync data with other device.</p>
-    <p id="status-message">Enter code and toggle the switch to connect.</p>
-  </div>
+    <div class="status">
+        <p>Sync data with other device.</p>
+        <p id="status-message">Enter code and toggle the switch to connect.</p>
+    </div>
     <div class="code-container">
         <input type="tel" maxlength="7" id="code-input" pattern="[0-9]{3}-[0-9]{3}"placeholder="123-456" />
         <button id="generateButton"></button>
@@ -129,7 +131,11 @@
 
     //manually export
     document.getElementById('showData').addEventListener('click', () => {
-        document.querySelector('.data').classList.toggle('open');
+        const dataDiv = document.querySelector('.data');
+        const msgsTextarea = document.getElementById('msgs');
+        dataDiv.classList.toggle('open');
+        msgsTextarea.classList.toggle('hide', dataDiv.classList.contains('open'));
+
         exportData().then((jsonData) => {
             console.log(compressData(jsonData));
             document.getElementById('json').value = jsonData;
