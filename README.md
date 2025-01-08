@@ -73,4 +73,4 @@ Capture ideas, aspirations, and goals that you would like to accomplish someday.
 - cd to folder
 - npm install -g http-server
 - http-server
-http://127.0.0.1:8080/
+- open browser to [http://127.0.0.1:8080/](http://127.0.0.1:8080/)
