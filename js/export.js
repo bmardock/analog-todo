@@ -1,47 +1,45 @@
 function compressData(jsonData) {
     // Compress JSON string with pako (Gzip)
     const jsonString = JSON.stringify(jsonData);
-    // Compress JSON string with pako (Gzip)
     const compressed = pako.gzip(jsonString);
-    // Convert the compressed data to Base64 for QR code compatibility
     return btoa(String.fromCharCode(...new Uint8Array(compressed)));
 }
 
 function decompressData(compressedData) {
-    // Decode Base64 string to binary string
     const binaryString = atob(compressedData);
-    // Convert binary string to Uint8Array for decompression
     const charData = binaryString.split('').map(char => char.charCodeAt(0));
     const binData = new Uint8Array(charData);
-    // Decompress using pako and parse JSON
     const decompressedString = pako.ungzip(binData, { to: 'string' });
-    // Convert the decompressed JSON string back into a JavaScript object
     return JSON.parse(decompressedString);
 }
-function msg(text){
+
+function msg(text) {
     const msgConsole = document.getElementById("msgs");
     msgConsole.value += text + '\n';
     console.log(text);
 }
 
-function exportData() {
-    return Promise.all([getAllFromStore('todo'), getAllFromStore('next'), getAllFromStore('someday'), getAllFromStore('weeklyGoals')])
-        .then(([todoData, nextData, somedayData, weeklyGoalsData ]) => {
-            return JSON.stringify({ 
-                todo: todoData,
-                next: nextData,
-                someday: somedayData,
-                weeklyGoals: weeklyGoalsData });
-        });
+async function exportData() {
+    const [todoData, nextData, somedayData, weeklyGoalsData] = await Promise.all([
+        getAllFromStore('todo'),
+        getAllFromStore('next'),
+        getAllFromStore('someday'),
+        getAllFromStore('weeklyGoals')
+    ]);
+    return JSON.stringify({ 
+        todo: todoData,
+        next: nextData,
+        someday: somedayData,
+        weeklyGoals: weeklyGoalsData 
+    });
 }
 
- async function importData(jsonData) {
+async function importData(jsonData) {
     const data = JSON.parse(jsonData);
     const promises = [];
-    
-    async function mergeAndSave(type, newData) {
-        const existingData = await getAllFromStore(type) || [];
 
+    const mergeAndSave = async (type, newData) => {
+        const existingData = await getAllFromStore(type) || [];
         const identifierKey = {
             todo: 'date',
             next: 'name',
@@ -70,14 +68,14 @@ function exportData() {
                 }
             }
         }
-    }
+    };
 
     // Process each type of data
-    ['todo', 'next', 'someday', 'weeklyGoals'].forEach(type => {
+    for (const type of ['todo', 'next', 'someday', 'weeklyGoals']) {
         if (data[type]) {
             promises.push(mergeAndSave(type, data[type]));
         }
-    });
+    }
 
-    return Promise.all(promises);
-}
+    await Promise.all(promises);
+} 
