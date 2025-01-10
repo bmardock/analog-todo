@@ -63,7 +63,7 @@
           await new Promise((resolve, reject) => {
             const newScript = document.createElement("script");
             if (script.src) {
-              const debug = false;
+              const debug = true;
               const cacheBust = debug ? `?cacheBust=${Date.now()}` : "";
               newScript.src = script.src + cacheBust;
               newScript.async = false; // Maintain execution order
