@@ -36,12 +36,6 @@
 <script src="./js/calendar.js"></script>
 <script>
 (async function () {
-    // TODOs:
-    // 1. Clear goal text if month changes.
-    // 3. Provide a save confirmation for goal text.
-    // 5. Decide if editing past goals is allowed.
-    // 6. Decide if setting future goals is allowed.
-
     const goalsContainer = document.querySelector('#goals');
     const goalTextArea = document.querySelector('[name=goal]');
     const weekIdInput = document.querySelector('[name=weekId]');
@@ -51,7 +45,7 @@
     const urlParams = new URLSearchParams(window.location.search);
     const monthParam = urlParams.get('month') || new Date().toISOString().slice(0, 7);
     const [year, month] = monthParam.split('-');
-    date = new Date(year, month - 1, 1); // month - 1 because months are zero-indexed
+    const date = new Date(year, month - 1, 1); // month - 1 because months are zero-indexed
 
     // Navigate calendar months
     document.getElementById('prev-month').addEventListener('click', () => navigateMonth(-1));
