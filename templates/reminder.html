@@ -1,82 +1,101 @@
 <p>Working on reminder</p>
-        <h1>Set a Reminder</h1>
-        <div class="status"></div>
-        <label for="reminderText">Reminder Text:</label>
-        <input type="text" id="reminderText" placeholder="Enter your reminder" required>
-        <label for="reminderDate">Reminder Date:</label>
-        <input type="date" id="reminderDate" required>
-        <label for="reminderTime">Reminder Time:</label>
-        <input type="time" id="reminderTime" required>
-        <button id="setReminder">Set Reminder</button>
+<h1>Set a Reminder</h1>
+<div class="status"></div>
+<label for="reminderText">Reminder Text:</label>
+<input
+  type="text"
+  id="reminderText"
+  placeholder="Enter your reminder"
+  required
+/>
+<label for="reminderDate">Reminder Date:</label>
+<input type="date" id="reminderDate" required />
+<label for="reminderTime">Reminder Time:</label>
+<input type="time" id="reminderTime" required />
+<button id="setReminder">Set Reminder</button>
 <script>
-	if ('serviceWorker' in navigator) {
-		navigator.serviceWorker.register('./service-worker.js', { scope: '/todo/' })
-	        .then(registration => {
-				// Request Notification permission
-			    if (Notification.permission === 'default') {
-			        Notification.requestPermission().then(permission => {
-			            if (permission === 'granted') {
-			                // Send a message to the service worker
-			                registration.active.postMessage({
-			                    title: 'Reminder',
-			                    body: 'This is your scheduled notification!'
-			                });
-			            } else {
-			                console.error('Notification permission denied.');
-			            }
-			        });
-			    }
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker
+      .register("./service-worker.js", { scope: "/todo/" })
+      .then((registration) => {
+        // Request Notification permission
+        if (Notification.permission === "default") {
+          Notification.requestPermission().then((permission) => {
+            if (permission === "granted") {
+              // Send a message to the service worker
+              registration.active.postMessage({
+                title: "Reminder",
+                body: "This is your scheduled notification!",
+              });
+            } else {
+              console.error("Notification permission denied.");
+            }
+          });
+        }
 
-	        	console.log('Service Worker registered with scope:', registration.scope);
-	            console.log('Service Worker Registered:', registration);
-	            if (!navigator.serviceWorker.controller) {
-	                console.log('Service Worker is registered but not controlling this page. Reloading...');
-	                //window.location.reload(); // Reload the page to activate the service worker
-	            }
-	        })
-	        .catch(error => console.error('Service Worker Registration Failed:', error));
-	}
-	function scheduleReminder(title, body, targetDate) {
-	    const now = new Date();
-	    console.log('now',now);
-	    console.log('targetDate',targetDate);
-	    const timeDifference = targetDate - now;
+        console.log(
+          "Service Worker registered with scope:",
+          registration.scope
+        );
+        console.log("Service Worker Registered:", registration);
+        if (!navigator.serviceWorker.controller) {
+          console.log(
+            "Service Worker is registered but not controlling this page. Reloading..."
+          );
+          //window.location.reload(); // Reload the page to activate the service worker
+        }
+      })
+      .catch((error) =>
+        console.error("Service Worker Registration Failed:", error)
+      );
+  }
+  function scheduleReminder(title, body, targetDate) {
+    const now = new Date();
+    console.log("now", now);
+    console.log("targetDate", targetDate);
+    const timeDifference = targetDate - now;
 
-	    if (timeDifference < 0) {
-	        alert('Selected time is in the past.');
-	        return;
-	    }
+    if (timeDifference < 0) {
+      alert("Selected time is in the past.");
+      return;
+    }
 
-	    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-	        navigator.serviceWorker.controller.postMessage({
-	            title,
-	            body,
-	            time: timeDifference,
-	        });
-	        console.log(`Reminder set for ${targetDate}`);
-	        //document.querySelector('.status').appendChild(`<p>Reminder set for ${targetDate}</p>`);
-	    } else {
-	        alert('Service Worker not available.');
-	    }
-	}
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        title,
+        body,
+        time: timeDifference,
+      });
+      console.log(`Reminder set for ${targetDate}`);
+      //document.querySelector('.status').appendChild(`<p>Reminder set for ${targetDate}</p>`);
+    } else {
+      alert("Service Worker not available.");
+    }
+  }
 
-	// Example usage
-	document.getElementById('setReminder').addEventListener('click', () => {
-	    const reminderText = document.getElementById('reminderText').value || 'reminder';
-	    const reminderDate = document.getElementById('reminderDate').value || '2024-12-08';
-	    //const reminderTime = document.getElementById('reminderTime').value || '';
-	    let reminderTime = document.getElementById('reminderTime').value || (() => {
-    		const now = new Date();
-    		now.setMinutes(now.getMinutes() + 1);
-    		return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-		})();
+  // Example usage
+  document.getElementById("setReminder").addEventListener("click", () => {
+    const reminderText =
+      document.getElementById("reminderText").value || "reminder";
+    const reminderDate =
+      document.getElementById("reminderDate").value || "2024-12-08";
+    //const reminderTime = document.getElementById('reminderTime').value || '';
+    let reminderTime =
+      document.getElementById("reminderTime").value ||
+      (() => {
+        const now = new Date();
+        now.setMinutes(now.getMinutes() + 1);
+        return `${String(now.getHours()).padStart(2, "0")}:${String(
+          now.getMinutes()
+        ).padStart(2, "0")}`;
+      })();
 
-	    if (!reminderText || !reminderDate || !reminderTime) {
-	        alert('Please fill out all fields.');
-	        return;
-	    }
-		const targetDateString = `${reminderDate}T${reminderTime}`;
-    	const targetDate = new Date(targetDateString);
-	    scheduleReminder('Reminder', reminderText, targetDate);
-	});
+    if (!reminderText || !reminderDate || !reminderTime) {
+      alert("Please fill out all fields.");
+      return;
+    }
+    const targetDateString = `${reminderDate}T${reminderTime}`;
+    const targetDate = new Date(targetDateString);
+    scheduleReminder("Reminder", reminderText, targetDate);
+  });
 </script>

@@ -1,80 +1,83 @@
-  <style>
-    video {
-      width: 100%;
-      max-width: 500px;
-    }
-    #result {
-      font-size: 1.2em;
-      margin-top: 10px;
-    }
-    #qrCode img {
-      margin-top: 20px;
-    }
-  </style>
+<style>
+  video {
+    width: 100%;
+    max-width: 500px;
+  }
+  #result {
+    font-size: 1.2em;
+    margin-top: 10px;
+  }
+  #qrCode img {
+    margin-top: 20px;
+  }
+</style>
 <main>
   <h1>QR Code Scanner with Test QR Code</h1>
   <video id="video" playsinline autoplay muted></video>
   <div id="result">QR Code Data: <span id="output"></span></div>
-
   <!-- Placeholder for QR Code -->
   <div id="qrCode"></div>
-
 </main>
-  <!-- Include jsQR and QR Code libraries -->
-  <!-- //READ QR CODE -->
-  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-  <!-- //GEN QR CODE -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
-  <script>
-    const video = document.getElementById('video');
-    const output = document.getElementById('output');
-    async function startCamera() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" }
-        });
-        video.srcObject = stream;
-        video.onloadedmetadata = () => {
-          video.play();
-          scanQRCode();
-        };
-      } catch (error) {
-        console.error("Error accessing camera:", error);
-      }
+<!-- Include jsQR and QR Code libraries -->
+<!-- //READ QR CODE -->
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<!-- //GEN QR CODE -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script>
+  const video = document.getElementById("video");
+  const output = document.getElementById("output");
+  async function startCamera() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" },
+      });
+      video.srcObject = stream;
+      video.onloadedmetadata = () => {
+        video.play();
+        scanQRCode();
+      };
+    } catch (error) {
+      console.error("Error accessing camera:", error);
     }
+  }
 
-    function scanQRCode() {
-      const canvas = document.createElement("canvas");
-      const context = canvas.getContext("2d");
+  function scanQRCode() {
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
 
-      function scan() {
-        if (video.readyState === video.HAVE_ENOUGH_DATA) {
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          context.drawImage(video, 0, 0, canvas.width, canvas.height);
-          const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-          const code = jsQR(imageData.data, imageData.width, imageData.height);
-          if (code) {
-            output.textContent = code.data;
-          } else {
-            requestAnimationFrame(scan);
-          }
+    function scan() {
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = context.getImageData(
+          0,
+          0,
+          canvas.width,
+          canvas.height
+        );
+        const code = jsQR(imageData.data, imageData.width, imageData.height);
+        if (code) {
+          output.textContent = code.data;
+        } else {
+          requestAnimationFrame(scan);
         }
       }
-      scan();
     }
+    scan();
+  }
 
-    // Generate a larger QR code for testing
-    function generateTestQRCode() {
-      const qr = qrcode(0, 'L');
-      qr.addData("Hello, world!");
-      qr.make();
-      // Add the QR code with a larger size
-      const qrCodeImage = qr.createImgTag(6); // Set size multiplier, e.g., 6 for larger
-      document.getElementById('qrCode').innerHTML = qrCodeImage;
-    }
+  // Generate a larger QR code for testing
+  function generateTestQRCode() {
+    const qr = qrcode(0, "L");
+    qr.addData("Hello, world!");
+    qr.make();
+    // Add the QR code with a larger size
+    const qrCodeImage = qr.createImgTag(6); // Set size multiplier, e.g., 6 for larger
+    document.getElementById("qrCode").innerHTML = qrCodeImage;
+  }
 
-    // Start camera and generate QR code on page load
-    startCamera();
-    generateTestQRCode();
-  </script>
+  // Start camera and generate QR code on page load
+  startCamera();
+  generateTestQRCode();
+</script>

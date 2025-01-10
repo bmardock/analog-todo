@@ -1,6 +1,8 @@
 <style>
-header {display:block}
-a.info {
+  header {
+    display: block;
+  }
+  a.info {
     color: #666;
     -webkit-text-stroke: 0.5px #666;
     text-decoration: none;
@@ -11,16 +13,15 @@ a.info {
     background-size: 20px 20px;
     background-repeat: no-repeat;
     background-position: left;
-}
-
-a.info:hover {
+  }
+  a.info:hover {
     color: #000;
     text-decoration: underline;
-}
-a.sync{
-	text-align: right;
-	padding: 10px 25px 10px 0;	
-	display: inline-block;
+  }
+  a.sync {
+    text-align: right;
+    padding: 10px 25px 10px 0;
+    display: inline-block;
     background-image: url(./imgs/settings.svg);
     background-size: 20px 20px;
     background-repeat: no-repeat;
@@ -28,33 +29,53 @@ a.sync{
     position: absolute;
     right: 0;
     top: 2px;
-}
-.cal-link{cursor:pointer; display:none;}
+  }
+  .cal-link {
+    cursor: pointer;
+    display: none;
+  }
 </style>
 <header>
-	<a class="info" title="learn how to use this app" href="#info">Get started with the analog framework.</a><a href="#export" class="sync" title="sync tasks between devices"></a>
-	<p>Set a goal for the week and define the best times to plan and review your progress.</p>
-	<p>What would make this week a success for you? <a href="#coach" class="coach" title="use coach to help set a weekly goal"></a></p>
+  <a class="info" title="learn how to use this app" href="#info"
+    >Get started with the analog framework.</a
+  ><a href="#export" class="sync" title="sync tasks between devices"></a>
+  <p>
+    Set a goal for the week and define the best times to plan and review your
+    progress.
+  </p>
+  <p>
+    What would make this week a success for you?
+    <a
+      href="#coach"
+      class="coach"
+      title="use coach to help set a weekly goal"
+    ></a>
+  </p>
 </header>
 <main>
-	<textarea name="goal"/></textarea>
-	<p>Best time to set your daily to-do list?</p>
-	<input name="start" type="time" />
-	<p>Best time to review your daily progress?</p>
-	<input name="review" type="time" />
-	<br/>
-	<a id="generate-ics" class="cal-link">Set calendar reminder<i class="calendar-icon"></i></a>
+  <textarea name="goal"></textarea>
+  <p>Best time to set your daily to-do list?</p>
+  <input name="start" type="time" />
+  <p>Best time to review your daily progress?</p>
+  <input name="review" type="time" />
+  <br />
+  <a id="generate-ics" class="cal-link"
+    >Set calendar reminder<i class="calendar-icon"></i
+  ></a>
 </main>
 <script src="./js/calendar.js"></script>
 <script>
-	document.querySelector('main').addEventListener("change", e => {
-		const goalText = document.querySelector('[name=goal]').value;
-		const createTodos = document.querySelector('[name=start]').value;
-		const reviewTodos = document.querySelector('[name=review]').value;
-		const currentWeek = getWeekIdentifier(new Date());
-		document.getElementById('generate-ics').style.display = (createTodos.length && reviewTodos.length) ? 'block' : 'none';
-		saveWeeklyGoal(currentWeek, goalText, createTodos, reviewTodos);
-	});
-	document.getElementById("generate-ics").addEventListener("click", generateICS );
-	readWeeklyGoal(renderGoals);
+  document.querySelector("main").addEventListener("change", (e) => {
+    const goalText = document.querySelector("[name=goal]").value;
+    const createTodos = document.querySelector("[name=start]").value;
+    const reviewTodos = document.querySelector("[name=review]").value;
+    const currentWeek = getWeekIdentifier(new Date());
+    document.getElementById("generate-ics").style.display =
+      createTodos.length && reviewTodos.length ? "block" : "none";
+    saveWeeklyGoal(currentWeek, goalText, createTodos, reviewTodos);
+  });
+  document
+    .getElementById("generate-ics")
+    .addEventListener("click", generateICS);
+  readWeeklyGoal(renderGoals);
 </script>

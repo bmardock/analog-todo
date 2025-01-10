@@ -1,151 +1,205 @@
 <style>
-    #goals {position: absolute; top:70px; left:0}
-    #goals .week{margin:5px 0; font-size:14px;
-        margin: 20px 2px 40px;
-        cursor: pointer;
-        color:#ccc;
-    }
-    #goals .week.goal{color:#000;}
-    #goals .week.current{-webkit-text-stroke: 1px #000;}
-    #goals .week.future{color:white;}
-    main textarea{min-height: 180px; margin-bottom:10px;}
+  #goals {
+    position: absolute;
+    top: 70px;
+    left: 0;
+  }
+  #goals .week {
+    margin: 5px 0;
+    font-size: 14px;
+    margin: 20px 2px 40px;
+    cursor: pointer;
+    color: #ccc;
+  }
+
+  #goals .week.goal {
+    color: #000;
+  }
+  #goals .week.current {
+    -webkit-text-stroke: 1px #000;
+  }
+  #goals .week.future {
+    color: white;
+  }
+  main textarea {
+    min-height: 180px;
+    margin-bottom: 10px;
+  }
 </style>
 <div id="calendar">
-    <div class="header">
-        <button id="prev-month">&lt;</button>
-        <h2 class="month-year"></h2>
-        <button id="next-month">&gt;</button>
-    </div>
-    <div class="day_header days">
-        <div class="day_name">Sun</div>
-        <div class="day_name">Mon</div>
-        <div class="day_name">Tue</div>
-        <div class="day_name">Wes</div>
-        <div class="day_name">Thu</div>
-        <div class="day_name">Fri</div>
-        <div class="day_name">Sat</div>
-    </div>
-    <div id="month_days" class="days"></div>
-    <div id="goals"></div>
+  <div class="header">
+    <button id="prev-month">&lt;</button>
+    <h2 class="month-year"></h2>
+    <button id="next-month">&gt;</button>
+  </div>
+  <div class="day_header days">
+    <div class="day_name">Sun</div>
+    <div class="day_name">Mon</div>
+    <div class="day_name">Tue</div>
+    <div class="day_name">Wes</div>
+    <div class="day_name">Thu</div>
+    <div class="day_name">Fri</div>
+    <div class="day_name">Sat</div>
+  </div>
+  <div id="month_days" class="days"></div>
+  <div id="goals"></div>
 </div>
 <main>
-    <p>Weekly goal for <span id="weekDate"></span><a href="#coach" class="coach" title="use coach to help set a weekly goal"></a></p>
-    <input type="hidden" name="weekId" />
-    <textarea name="goal" placeholder="What would make this week a success for you?" /></textarea>
+  <p>
+    Weekly goal for <span id="weekDate"></span
+    ><a
+      href="#coach"
+      class="coach"
+      title="use coach to help set a weekly goal"
+    ></a>
+  </p>
+  <input type="hidden" name="weekId" />
+  <textarea
+    name="goal"
+    placeholder="What would make this week a success for you?"
+  ></textarea>
 </main>
 <script src="./js/calendar.js"></script>
 <script>
-(async function () {
-    const goalsContainer = document.querySelector('#goals');
-    const goalTextArea = document.querySelector('[name=goal]');
-    const weekIdInput = document.querySelector('[name=weekId]');
-    const weekDateSpan = document.getElementById('weekDate');
+  (async function () {
+    const goalsContainer = document.querySelector("#goals");
+    const goalTextArea = document.querySelector("[name=goal]");
+    const weekIdInput = document.querySelector("[name=weekId]");
+    const weekDateSpan = document.getElementById("weekDate");
     let weekGoals = await getWeeklyGoals();
 
     const urlParams = new URLSearchParams(window.location.search);
-    const monthParam = urlParams.get('month') || new Date().toISOString().slice(0, 7);
-    const [year, month] = monthParam.split('-');
+    const monthParam =
+      urlParams.get("month") || new Date().toISOString().slice(0, 7);
+    const [year, month] = monthParam.split("-");
     const date = new Date(year, month - 1, 1); // month - 1 because months are zero-indexed
 
     // Navigate calendar months
-    document.getElementById('prev-month').addEventListener('click', () => navigateMonth(-1));
-    document.getElementById('next-month').addEventListener('click', () => navigateMonth(1));
-    document.querySelector('#month_days').addEventListener("click", ({ target }) => {
-        if (target.classList.contains('day_num')) {
-            const url = `?date=${target.getAttribute('id')}#todo`;
-            updateURL(url);
+    document
+      .getElementById("prev-month")
+      .addEventListener("click", () => navigateMonth(-1));
+    document
+      .getElementById("next-month")
+      .addEventListener("click", () => navigateMonth(1));
+    document
+      .querySelector("#month_days")
+      .addEventListener("click", ({ target }) => {
+        if (target.classList.contains("day_num")) {
+          const url = `?date=${target.getAttribute("id")}#todo`;
+          updateURL(url);
         }
-    });
+      });
 
-    goalsContainer.addEventListener('click', (event) => {
-        const weekDiv = event.target.closest('.week');
-        if (weekDiv) {
-            const week = weekDiv.getAttribute('data-week');
-            if (weekGoals.length > 0) {
-                showWeeklyGoal(week);
-            } else {
-                console.warn("Week goals are not yet loaded.");
-            }
+    goalsContainer.addEventListener("click", (event) => {
+      const weekDiv = event.target.closest(".week");
+      if (weekDiv) {
+        const week = weekDiv.getAttribute("data-week");
+        if (weekGoals.length > 0) {
+          showWeeklyGoal(week);
+        } else {
+          console.warn("Week goals are not yet loaded.");
         }
+      }
     });
 
     goalTextArea.addEventListener("change", async () => {
-        const goalText = goalTextArea.value;
-        const weekId = weekIdInput.value;
-        console.log("Saving goal for week:", weekId, "with text:", goalText);
-        saveWeeklyGoal(weekId, goalText, null, null, readWeeklyGoal);
-        weekGoals = await getWeeklyGoals();
+      const goalText = goalTextArea.value;
+      const weekId = weekIdInput.value;
+      console.log("Saving goal for week:", weekId, "with text:", goalText);
+      saveWeeklyGoal(weekId, goalText, null, null, readWeeklyGoal);
+      weekGoals = await getWeeklyGoals();
     });
 
     async function loadCalendar() {
-        renderCalendar(date);
-        loadEvents();
-        try {
-            populateGoals();
-        } catch (error) {
-            console.error("Error loading weekly goals:", error);
-        }
+      renderCalendar(date);
+      loadEvents();
+      try {
+        populateGoals();
+      } catch (error) {
+        console.error("Error loading weekly goals:", error);
+      }
     }
 
     function navigateMonth(offset) {
-        date.setMonth(date.getMonth() + offset);
-        const newUrl = `?month=${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}#calendar`;
-        updateURL(newUrl);
-        loadCalendar();
+      date.setMonth(date.getMonth() + offset);
+      const newUrl = `?month=${date.getFullYear()}-${String(
+        date.getMonth() + 1
+      ).padStart(2, "0")}#calendar`;
+      updateURL(newUrl);
+      loadCalendar();
     }
 
     function updateURL(newUrl) {
-        window.history.pushState({}, '', newUrl);
-        window.dispatchEvent(new Event("hashchange"));
+      window.history.pushState({}, "", newUrl);
+      window.dispatchEvent(new Event("hashchange"));
     }
 
     function populateGoals() {
-        const currentWeek = getWeekIdentifier(new Date());
-        const weekList = getYearWeekArray(date.getFullYear(), (date.getMonth() + 1));
-        goalsContainer.innerHTML = '';
-        weekList.forEach((week) => {
-            const weekDiv = document.createElement('div');
-            weekDiv.setAttribute('data-week', week);
-            weekDiv.textContent = `★`;
-            weekDiv.className = `week ${week < currentWeek ? 'past' : week === currentWeek ? 'current' : 'future'}`;
-            if (weekGoals.some(result => result.week === week)) {
-                weekDiv.classList.add('goal');
-            }
-            goalsContainer.appendChild(weekDiv);
-        });
+      const currentWeek = getWeekIdentifier(new Date());
+      const weekList = getYearWeekArray(
+        date.getFullYear(),
+        date.getMonth() + 1
+      );
+      goalsContainer.innerHTML = "";
+      weekList.forEach((week) => {
+        const weekDiv = document.createElement("div");
+        weekDiv.setAttribute("data-week", week);
+        weekDiv.textContent = `★`;
+        weekDiv.className = `week ${
+          week < currentWeek
+            ? "past"
+            : week === currentWeek
+            ? "current"
+            : "future"
+        }`;
+        if (weekGoals.some((result) => result.week === week)) {
+          weekDiv.classList.add("goal");
+        }
+        goalsContainer.appendChild(weekDiv);
+      });
     }
 
     function getWeekDate(weekInfo) {
-        const [year, week] = weekInfo.split('-').map(Number);
-        const firstDayOfYear = new Date(Date.UTC(year, 0, 1));
-        const daysOffset = (week - 1) * 7;
-        const weekStart = new Date(firstDayOfYear.setDate(firstDayOfYear.getDate() + daysOffset));
-        const day = weekStart.getDay();
-        const sundayStart = new Date(weekStart.setDate(weekStart.getDate() - day));
-        return sundayStart.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      const [year, week] = weekInfo.split("-").map(Number);
+      const firstDayOfYear = new Date(Date.UTC(year, 0, 1));
+      const daysOffset = (week - 1) * 7;
+      const weekStart = new Date(
+        firstDayOfYear.setDate(firstDayOfYear.getDate() + daysOffset)
+      );
+      const day = weekStart.getDay();
+      const sundayStart = new Date(
+        weekStart.setDate(weekStart.getDate() - day)
+      );
+      return sundayStart.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
     }
 
     function showWeeklyGoal(week) {
-        const currentWeek = getWeekIdentifier(new Date());
-        console.log("Current week:", currentWeek);
-        // If week is not provided or is falsy, use currentWeek
-        const targetWeek = week || currentWeek;
-        const weekDate = getWeekDate(targetWeek);
-        const matchingGoal = weekGoals.find(result => result.week === targetWeek);
-        goalTextArea.value = matchingGoal ? matchingGoal.goalText : '';
-        weekDateSpan.textContent = weekDate;
-        weekIdInput.value = targetWeek;
+      const currentWeek = getWeekIdentifier(new Date());
+      console.log("Current week:", currentWeek);
+      // If week is not provided or is falsy, use currentWeek
+      const targetWeek = week || currentWeek;
+      const weekDate = getWeekDate(targetWeek);
+      const matchingGoal = weekGoals.find(
+        (result) => result.week === targetWeek
+      );
+      goalTextArea.value = matchingGoal ? matchingGoal.goalText : "";
+      weekDateSpan.textContent = weekDate;
+      weekIdInput.value = targetWeek;
 
-        // Check if targetWeek is the current week
-        if (targetWeek === currentWeek) {
-            console.log("This is the current week.");
-        } else {
-            console.log("This is not the current week.");
-        }
+      // Check if targetWeek is the current week
+      if (targetWeek === currentWeek) {
+        console.log("This is the current week.");
+      } else {
+        console.log("This is not the current week.");
+      }
     }
 
     // Initialize calendar and goals
     loadCalendar();
     showWeeklyGoal();
-})();
+  })();
 </script>
