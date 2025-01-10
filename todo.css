@@ -363,6 +363,24 @@ todoItem .dropdown.disabled:focus-within .dropdown-content{display:none;}
 	    outline: none !important;
 	    box-shadow: 0;
 	}
+
+  .loading { position: relative; }
+  .loading::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: #000;
+    animation: slide-line 1.5s ease-in-out infinite;
+  }
+  @keyframes slide-line {
+    0% { width: 0; left: 0; }
+    50% { width: 100%; left: 0; }
+    100% { width: 0; left: 100%; }
+  }
+  
 	main input[type=time]{
 		font-family: 'Caveat', sans-serif;
 		font-size:30px;

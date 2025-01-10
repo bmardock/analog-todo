@@ -277,7 +277,6 @@ class TodoManager {
   async init() {
     //store name should only be todo, next, someday
     this.storeName = window.location.hash.slice(1) || document.querySelector('[name=listType]').value.toLowerCase();
-    console.log('Database opened');
     document.documentElement.classList.remove('notes');
 
     if (document.querySelector('.picker')?.value) { //if card name is set

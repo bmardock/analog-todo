@@ -49,10 +49,9 @@
     let weekGoals = await getWeeklyGoals();
 
     const urlParams = new URLSearchParams(window.location.search);
-    const monthParam = urlParams.get('month');
-    const date = monthParam 
-        ? new Date(`${monthParam}-01`) // Append day for a valid date string
-        : new Date();
+    const monthParam = urlParams.get('month') || new Date().toISOString().slice(0, 7);
+    const [year, month] = monthParam.split('-');
+    date = new Date(year, month - 1, 1); // month - 1 because months are zero-indexed
 
     // Navigate calendar months
     document.getElementById('prev-month').addEventListener('click', () => navigateMonth(-1));

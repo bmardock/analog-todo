@@ -58,7 +58,8 @@
 (function (){
   //set the list of todos
   console.log('set mgmt');
-  const mgmt = TodoApp.cardManager;
+  const mgmt = window.TodoApp.cardManager;
+
   let hash = location.hash.slice(1) || 'today';
   hash = hash === 'todo' ? 'today' : hash;
   const listType = hash[0].toUpperCase() + hash.slice(1).toLowerCase();
@@ -138,6 +139,7 @@
   //todoList change
   document.querySelector('todoList').addEventListener("change", async (e) => {
     if (e.target.className === 'copy') {
+      //#todo set loading and complete state
       const copyTo = e.target.value.toLowerCase();
       const signal = e.target.parentNode.querySelector('.signal').value;
       const text = e.target.parentNode.querySelector('input').value;
