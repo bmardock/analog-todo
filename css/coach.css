@@ -1,0 +1,92 @@
+h2 {
+  font: GTPressuraMonoLight, Avenir Next, Helvetica Neue, Helvetica, Arial,
+    sans-serif;
+  font-size: 14px;
+  font-weight: normal;
+  color: rgb(0, 0, 0, 0.6);
+  margin-bottom: 5px;
+}
+#thread_id {
+  font-size: 10px;
+}
+textarea {
+  min-height: 150px;
+}
+#chatForm {
+  padding: 0 0 40px 0;
+  position: relative;
+}
+#chatForm button {
+  position: absolute;
+  right: 5px;
+  bottom: 25px;
+  border-radius: 50%;
+  background-color: #000;
+  padding: 15px;
+  display: inline-block;
+  background-image: url("../imgs/arrow-up-white.svg");
+  background-size: 20px 20px;
+  background-position: center;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+#chatForm button:hover {
+  background-color: #333;
+}
+.chat-box {
+  max-height: 450px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+}
+.message {
+  margin-bottom: 10px;
+}
+.user {
+  position: relative;
+  font-weight: bold;
+  color: #333;
+  border-radius: 5px;
+  padding: 10px;
+  background: #fff;
+}
+.user::after {
+  content: "";
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 0px solid transparent;
+  border-top: 10px solid #fff;
+  bottom: -10px;
+  right: 6px;
+}
+.assistant {
+  color: #000;
+}
+.history {
+  opacity: 0.5;
+}
+.message p {
+  margin: 0;
+}
+
+.thinking:after {
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: bottom;
+  -webkit-animation: ellipsis steps(4, end) 900ms infinite;
+  animation: ellipsis steps(4, end) 900ms infinite;
+  content: "\2026";
+  width: 0px;
+}
+@keyframes ellipsis {
+  to {
+    width: 40px;
+  }
+}
+
+@-webkit-keyframes ellipsis {
+  to {
+    width: 40px;
+  }
+}
