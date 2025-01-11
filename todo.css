@@ -892,7 +892,7 @@ label.archive:hover {
   white-space: nowrap;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   font-size: 12px;
-  z-index: 10;
+  z-index: 100;
 }
 
 .circle:hover::before {
