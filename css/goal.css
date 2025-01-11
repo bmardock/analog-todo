@@ -1,0 +1,57 @@
+.cal-link {
+  padding: 20px 0 10px;
+  display: block;
+  text-align: right;
+  cursor: pointer;
+  display: none;
+}
+.calendar-icon {
+  width: 24px; /* Adjust the size as needed */
+  height: 24px;
+  display: inline-block;
+  background-color: transparent;
+  background-image: url("../imgs/calendar.svg");
+  background-size: contain;
+  background-repeat: no-repeat;
+  text-indent: 1000;
+  overflow: hidden;
+  vertical-align: bottom;
+  margin-left: 10px;
+}
+main input[type="time"] {
+  font-family: "Caveat", sans-serif;
+  font-size: 30px;
+  min-width: 50%;
+}
+
+header {
+  display: block;
+}
+a.info {
+  color: #666;
+  -webkit-text-stroke: 0.5px #666;
+  text-decoration: none;
+  transition: color 0.3s, text-decoration 0.3s;
+  padding: 5px 0 5px 25px;
+  display: inline-block;
+  background-image: url("../imgs/info.svg");
+  background-size: 20px 20px;
+  background-repeat: no-repeat;
+  background-position: left;
+}
+a.info:hover {
+  color: #000;
+  text-decoration: underline;
+}
+a.sync {
+  text-align: right;
+  padding: 10px 25px 10px 0;
+  display: inline-block;
+  background-image: url("../imgs/settings.svg");
+  background-size: 20px 20px;
+  background-repeat: no-repeat;
+  background-position: right;
+  position: absolute;
+  right: 0;
+  top: 2px;
+}

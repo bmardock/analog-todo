@@ -1,0 +1,483 @@
+/* CARD CSS */
+header .listType {
+  border: none;
+  font-size: 18px;
+  color: rgba(0, 0, 0, 0.6);
+  display: inline-block;
+  cursor: none;
+}
+header input.picker {
+  float: right;
+  margin: 0 20px 0 0;
+}
+header input.picker {
+  font-family: "Caveat", sans-serif;
+  min-width: 100px;
+  text-align: center;
+  text-wrap: nowrap;
+  text-transform: uppercase;
+  position: relative;
+  -webkit-appearance: none;
+  -webkit-border-radius: 0;
+  color: #000;
+  height: 24px;
+  font-size: 24px;
+}
+header input.picker::placeholder {
+  color: rgba(0, 0, 0, 0.3);
+}
+header input.picker::-webkit-calendar-picker-indicator {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  color: transparent;
+  background: transparent;
+}
+header input.picker:read-only {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.3);
+}
+.cardSignal {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+/* Hide the default radio input appearance */
+.cardSignal input {
+  appearance: none;
+  -webkit-appearance: none; /* For Safari */
+  width: 8px;
+  height: 8px;
+  border: 1px solid #999;
+  margin: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  position: relative;
+}
+
+/* Style the checked radio button to add a filled inner circle */
+.cardSignal input:focus {
+  border: 1px solid #999;
+}
+
+.cardSignal input:checked::before {
+  width: 8px;
+  height: 8px;
+  content: "";
+  background: #000;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+header i {
+  font-weight: bold;
+  font-style: normal;
+  font-size: 25px;
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: block;
+  cursor: pointer;
+}
+todoList {
+  padding: 10px 0;
+}
+todoItem {
+  display: block;
+  position: relative;
+}
+todoItem input {
+  flex: 1 1 auto;
+  text-transform: uppercase;
+  font-family: "Caveat", sans-serif;
+  font-size: 24px;
+  line-height: 30px;
+  margin: 18px 0 0 25px;
+  display: block;
+  text-overflow: ellipsis;
+  -webkit-appearance: none;
+  -webkit-border-radius: 0;
+}
+todoItem select {
+  width: 10px;
+  appearance: none;
+}
+
+todoitem {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.signal {
+  text-indent: 20px;
+  flex: 0 0 auto;
+  margin-right: 8px;
+  display: block;
+  left: 0;
+  bottom: 5px;
+  padding: 0;
+  position: absolute;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  appearance: none;
+  background-size: cover;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Ccircle cx='15' cy='15' r='14' stroke='%23999' stroke-width='2' fill='none' /%3E%3Cline x1='15' y1='1' x2='15' y2='29' stroke='%23999' stroke-width='2' /%3E%3C/svg%3E");
+}
+.in-progress {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Ccircle cx='15' cy='15' r='14' fill='none' stroke='%23999' stroke-width='2' /%3E%3Cpath d='M15 1 A14 14 0 0 1 15 29 Z' fill='%23000' /%3E%3C/svg%3E");
+}
+.completed {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Ccircle cx='15' cy='15' r='14' stroke='%23999' fill='%23000' /%3E%3C/svg%3E");
+}
+.appointment {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Ccircle cx='15' cy='15' r='14' stroke='%23999' stroke-width='2' fill='none' /%3E%3Cline x1='1' y1='15' x2='29' y2='15' stroke='%23000' stroke-width='2' /%3E%3Cline x1='15' y1='1' x2='15' y2='29' stroke='%23000' stroke-width='2' /%3E%3C/svg%3E");
+}
+.delegated {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Ccircle cx='15' cy='15' r='14' stroke='%23999' stroke-width='2' fill='none' /%3E%3Cline x1='1' y1='15' x2='29' y2='15' stroke='%23000' stroke-width='2' /%3E%3Cline x1='15' y1='1' x2='15' y2='29' stroke='%23000' stroke-width='2' /%3E%3Cpolyline points='15,5 25,15 15,25' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' /%3E%3C/svg%3E");
+}
+.dropdown {
+  flex: 0 0 auto;
+  position: absolute;
+  bottom: 0;
+}
+.dropdown button {
+  border: 0;
+  cursor: pointer;
+  position: relative;
+  background-color: transparent;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #f9f9f9;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  z-index: 10;
+}
+
+.dropdown-content a {
+  position: relative;
+  color: black;
+  padding: 10px 0 10px 35px;
+  text-decoration: none;
+  display: block;
+}
+.dropdown-content a i.signal {
+  left: 5px;
+}
+
+.dropdown-content a:hover {
+  background-color: #ddd;
+}
+
+.dropdown:focus-within .dropdown-content {
+  display: block;
+}
+.dropdown-content a:first-child {
+  border-radius: 10px 10px 0 0;
+}
+
+.dropdown-content a:last-child {
+  border-radius: 0 0 10px 10px;
+}
+todoItem .copy {
+  display: hidden;
+}
+todoItem .dropdown.disabled button {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+todoItem .dropdown.disabled:focus-within .dropdown-content {
+  display: none;
+}
+
+.copy {
+  flex: 0 0 auto;
+  appearance: none;
+  position: absolute;
+  bottom: 0;
+  right: -5px;
+  margin: 4px auto;
+  display: block;
+  text-align: center;
+  background-color: rgba(255, 255, 255, 0.8);
+  background-image: url("../imgs/copy.svg");
+  background-size: contain; /* Adjusts the SVG size to fit the element */
+  background-repeat: no-repeat; /* Prevents the SVG from repeating */
+  background-position: center; /* Centers the SVG in the element */
+  background-size: 15px 15px;
+  border: 0;
+  cursor: pointer;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  padding: 2px 8px;
+  text-indent: 40px;
+}
+todoItem .copy.hidden {
+  display: none;
+}
+todoitem:focus-within input {
+  padding-right: 20px;
+}
+
+card {
+  display: none;
+}
+card.active {
+  display: block;
+}
+
+card .flip {
+  position: absolute;
+  left: 46%;
+  margin: 0 auto;
+  line-height: 12px;
+  color: #999;
+  display: block;
+  font-weight: bold;
+  font-size: 40px;
+  text-decoration: none;
+  text-align: center;
+  background-color: transparent;
+  background-image: url("../imgs/arrow-right-circle.svg");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  color: #000;
+  background-size: 25px 25px;
+  border: 0;
+  cursor: pointer;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  padding: 2px 8px;
+  z-index: 99;
+  opacity: 0.5;
+}
+
+card.back .flip {
+  background-image: url("../imgs/arrow-left-circle.svg");
+}
+
+html.notes .flip {
+  color: #000;
+  opacity: 1;
+}
+
+textarea[name="braindump"] {
+  height: 69vh;
+}
+
+cal {
+  display: none;
+  justify-content: space-between;
+  padding: 10px;
+  align-items: flex-start;
+  margin-top: 30px;
+}
+body.today cal {
+  display: flex;
+}
+
+cal .day {
+  text-align: center;
+  width: 35px;
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 12px;
+}
+
+cal .day a {
+  font-size: 16px;
+  display: block;
+  width: 25px;
+  height: 25px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  text-decoration: none;
+  border: 3px solid transparent;
+  border-radius: 50%;
+  margin-left: 2px;
+}
+
+cal .day a.current {
+  color: #000;
+  background-color: rgba(255, 255, 255, 0.8);
+  font-weight: bold;
+  cursor: none;
+}
+cal .day a.today {
+  border: 3px solid rgba(0, 0, 0, 0.3);
+}
+cal .day span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: inline-block;
+}
+
+.archive-button {
+  display: none;
+}
+.archive-button.on {
+  display: block;
+}
+/* Hide the default checkbox */
+.archive-checkbox {
+  display: none;
+}
+
+/* Style the label to act as the visible checkbox */
+label.archive {
+  display: inline-block;
+  text-align: center;
+  background-image: url("../imgs/archive.svg"); /* Use your SVG as background */
+  background-size: 20px 20px; /* Adjust the size of the SVG */
+  background-repeat: no-repeat;
+  background-position: center;
+  border: none;
+  cursor: pointer;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  padding: 0;
+  opacity: 0.4;
+  position: absolute;
+  top: 8px;
+  left: 65px;
+}
+
+/* Add hover effect for better interactivity */
+label.archive:hover {
+  opacity: 0.8;
+}
+/* Add style for when the checkbox is checked */
+.archive-checkbox:checked + .archive {
+  opacity: 1; /* Full opacity when checked */
+  background-color: white; /* Optional background when checked */
+  background-image: url("../imgs/archive-select.svg");
+}
+
+.list {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 5px 0;
+}
+
+.circle {
+  font-weight: bold;
+  position: relative;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: transparent;
+  border: 3px solid rgba(0, 0, 0, 0.3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  text-indent: 0;
+}
+.circle:active {
+  box-shadow: none;
+}
+.circle:active {
+  overflow: hidden;
+}
+.circle:hover,
+.circle.on {
+  border: 3px solid rgba(0, 0, 0, 0.6);
+}
+.circle:hover::after {
+  content: attr(data-text);
+  position: absolute;
+  bottom: 40px; /* Adjust based on desired distance */
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #333;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 5px;
+  white-space: nowrap;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  font-size: 12px;
+  z-index: 100;
+}
+
+.circle:hover::before {
+  content: "";
+  position: absolute;
+  bottom: 30px; /* Place just above the popover */
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px;
+  border-style: solid;
+  border-color: #333 transparent transparent transparent;
+}
+
+.archive .list {
+  margin: 0;
+  overflow: hidden;
+  max-height: 0; /* Collapsed by default */
+  transition: min-height 0.8s ease-out;
+  padding: 0;
+}
+.archive.open .list {
+  max-height: 300px;
+  overflow: inherit;
+  padding: 10px 0;
+}
+
+.recent {
+  margin-top: 20px;
+}
+.archive.empty {
+  display: none;
+}
+.recent h2,
+.archive h2 {
+  margin: 0;
+  padding: 0;
+  position: relative;
+  font-size: 14px;
+  font-weight: normal;
+  color: rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+  font-family: GTPressuraMonoLight, Avenir Next, Helvetica Neue, Helvetica,
+    Arial, sans-serif;
+}
+.archive h2:after {
+  content: "▼"; /* Default down arrow */
+  font-size: 12px;
+  margin-left: 20px; /* Space between text and arrow */
+  transition: transform 0.8s ease;
+}
+
+.archive.open h2::after {
+  content: "▲"; /* Up arrow */
+}
+.someday .archive {
+  left: 95px;
+}
+
+.next card.active,
+.someday card.active {
+  padding-bottom: 10px;
+}

@@ -1,0 +1,284 @@
+* {
+  font-family: arial;
+}
+a {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+p {
+  font-family: GTPressuraMonoLight, Avenir Next, Helvetica Neue, Helvetica,
+    Arial, sans-serif;
+}
+p.desc {
+  padding-left: 20px;
+}
+main p {
+  margin: 0 0 10px;
+}
+
+h2 {
+  font-family: "arial";
+  color: #000;
+  font-size: 28px;
+  color: #000;
+  font-weight: bolder;
+  margin: 0;
+}
+
+textarea {
+  background: transparent;
+  border: 0;
+  field-sizing: content;
+  width: 100%;
+  min-height: 300px;
+  margin: 0;
+  font-family: "Caveat", sans-serif;
+  font-size: 24px;
+  line-height: 30px;
+  display: block;
+  -webkit-appearance: none;
+  -webkit-border-radius: 0;
+  background-attachment: local;
+  background-image: linear-gradient(
+      to right,
+      transparent 10px,
+      transparent 10px
+    ),
+    linear-gradient(to left, transparent 10px, transparent 10px),
+    repeating-linear-gradient(
+      transparent,
+      transparent 30px,
+      rgba(0, 0, 0, 0.3) 30px,
+      rgba(0, 0, 0, 0.3) 31px,
+      transparent 31px
+    );
+  line-height: 31px;
+}
+textarea:focus {
+  outline: none !important;
+  box-shadow: 0;
+}
+
+body {
+  margin: 0;
+  background: #5b5f4c;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 250 250' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='4' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  background-blend-mode: overlay;
+  min-height: 100vh;
+}
+
+.container {
+  min-height: 100vh; /* Makes the container at least the full height of the viewport */
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 50px; /* Adjust to match footer height */
+  box-sizing: border-box; /* Ensures padding doesn’t increase overall height */
+  margin-bottom: 0;
+}
+
+body .container {
+  flex: 1;
+  position: relative;
+  border-radius: 15px;
+  margin: 0 auto;
+  padding: 0;
+  color: rgba(0, 0, 0, 0.6);
+  background: #e4e5e9;
+  filter: drop-shadow(0px 5px 10px #000);
+}
+body #content {
+  padding: 0 10px;
+  margin: 10px 0 60px;
+  transition: opacity 0.5s ease-in-out;
+}
+
+footer,
+.container {
+  transition: background-color 0.5s ease;
+}
+/* set next and someday bg */
+body.next footer,
+body.next .container {
+  background: #f1ede7;
+}
+body.someday footer,
+body.someday .container {
+  background: #d2c1a9;
+}
+
+body.someday input,
+body.someday i {
+  border-color: rgba(0, 0, 0, 0.3);
+}
+body.today .archive,
+body.today .recent {
+  display: none;
+}
+
+select {
+  -webkit-appearance: none;
+  background: none;
+  border: none;
+  font-size: 18px;
+  background: transparent;
+  color: rgba(0, 0, 0, 0.6);
+  outline: none;
+}
+
+select:focus-visible {
+  outline: none;
+}
+input {
+  border: none;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.3);
+  background: transparent;
+}
+input:focus {
+  border: none;
+  border-bottom: 2px solid #000;
+  outline: none;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+a.coach {
+  text-align: right;
+  padding: 10px 25px 10px 0;
+  display: inline-block;
+  background-image: url("../imgs/ai-agent.svg");
+  background-size: 20px 20px;
+  background-repeat: no-repeat;
+  background-position: right;
+}
+
+.loading {
+  position: relative;
+}
+.loading::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: #000;
+  animation: slide-line 1.5s ease-in-out infinite;
+}
+@keyframes slide-line {
+  0% {
+    width: 0;
+    left: 0;
+  }
+  50% {
+    width: 100%;
+    left: 0;
+  }
+  100% {
+    width: 0;
+    left: 100%;
+  }
+}
+
+header {
+  position: relative;
+  display: flex;
+}
+
+footer {
+  background: #e4e5e9;
+  border-radius: 0 0 15px 15px;
+  width: 400px;
+
+  position: absolute;
+  bottom: 0;
+  padding: 5px 0;
+  width: 100%;
+  border-top: 2px dotted rgba(0, 0, 0, 0.3);
+}
+footer ul {
+  display: flex;
+  justify-content: space-evenly;
+  position: relative;
+  align-items: center;
+  margin: 0 auto;
+  list-style: none;
+  padding: 0;
+}
+footer li {
+  flex: 1;
+  display: inline-block;
+  text-align: center;
+}
+footer span {
+  padding: 10px;
+  display: block;
+  color: #999;
+}
+footer a {
+  opacity: 0.5;
+  display: inline-block; /* Ensures the background is visible */
+  padding: 35px 20px 0; /* Adjust padding as needed */
+  background-image: url("award.svg");
+  background-size: contain; /* Adjusts the SVG size to fit the element */
+  background-repeat: no-repeat; /* Prevents the SVG from repeating */
+  background-position: top center; /* Centers the SVG in the element */
+  color: #000; /* Text color over the background */
+  background-size: 30px 30px;
+  text-decoration: none; /* Removes underline */
+  font-size: 12px;
+  -webkit-text-stroke: 0.6px transparent;
+}
+footer li.goal a {
+  background-image: url("../imgs/award.svg");
+}
+footer li.todo a {
+  background-image: url("../imgs/list.svg");
+}
+footer li.calendar a {
+  background-image: url("../imgs/calendar.svg");
+}
+footer li.export a {
+  background-image: url("../imgs/cast.svg");
+}
+footer li.info a {
+  background-image: url("../imgs/info.svg");
+}
+footer li.next a {
+  background-image: url("../imgs/next.svg");
+}
+footer li.someday a {
+  background-image: url("../imgs/someday.svg");
+}
+
+body.goal footer li.goal a,
+body.today footer li.todo a,
+body.todo footer li.todo a,
+body.calendar footer li.calendar a,
+body.export footer li.export a,
+body.info footer li.info a,
+body.next footer li.next a,
+body.someday footer li.someday a {
+  text-decoration: none;
+  opacity: 1;
+  -webkit-text-stroke: 0.6px #000;
+}
+
+@media screen and (min-width: 501px) {
+  body .container {
+    width: 400px;
+  }
+}
+@media screen and (max-width: 450px) {
+  body .container {
+    filter: drop-shadow(0 0 0 #000);
+    border-radius: 0;
+  }
+  body {
+    background: #e4e5e9;
+  }
+  body.next {
+    background: #f1ede7;
+  }
+  body.someday {
+    background: #d2c1a9;
+  }
+}

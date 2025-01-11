@@ -1,0 +1,226 @@
+/* export */
+.export main textarea {
+  margin: 20px 0;
+  font-size: 10px;
+  font-family: arial;
+}
+/* Textarea styling */
+.export main textarea {
+  width: 100%;
+  height: 60px;
+  margin-top: 10px;
+  padding: 10px 0;
+  font-size: 14px;
+  border-radius: 5px;
+}
+
+.export main #msgs {
+  min-height: auto;
+}
+
+/* Code container styling */
+.code-container {
+  position: relative;
+}
+#code-input {
+  width: 100%;
+  padding: 10px 0;
+  font-size: 20px;
+  text-align: center;
+  border-radius: 8px;
+  border: 2px solid #ccc;
+  background-color: #f8f8f8;
+  transition: border-color 0.3s, background-color 0.3s;
+}
+
+#generateButton {
+  cursor: pointer;
+  position: absolute;
+  top: 14px;
+  left: 10px;
+  height: 20px;
+  width: 20px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: #333;
+  transition: color 0.3s;
+
+  background-image: url("../imgs/share-2.svg");
+  background-size: 20px 20px;
+  background-repeat: no-repeat;
+  background-position: right;
+
+  transition: background-color 0.3s;
+}
+
+#connectButton {
+  cursor: pointer;
+  position: absolute;
+  top: 14px;
+  right: 10px;
+  height: 20px;
+  width: 20px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: #333;
+  transition: color 0.3s;
+
+  background-image: url("../imgs/toggle-left.svg");
+  background-size: 20px 20px;
+  background-repeat: no-repeat;
+  background-position: right;
+
+  transition: background-color 0.3s;
+}
+.connected #connectButton {
+  background-image: url("../imgs/toggle-right.svg");
+}
+.connected #generateButton {
+  display: hidden;
+}
+
+.connected #code-input {
+  border-color: #28a745;
+  background: #e8f2eb;
+}
+
+/* Switch styling */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 25px;
+  margin: 10px 0;
+}
+
+.switch input {
+  display: none; /* Hide default checkbox */
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+  border-radius: 25px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 17px;
+  width: 17px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+.export input:checked + .slider {
+  background-color: #007bff;
+}
+
+.export input:checked + .slider:before {
+  transform: translateX(24px);
+}
+
+.export input:disabled + .slider {
+  cursor: not-allowed;
+}
+
+/* Buttons styling */
+.export .buttons {
+  display: flex;
+  justify-content: center;
+}
+
+.export button {
+  padding: 10px 20px;
+  font-size: 14px;
+  border-radius: 5px;
+  border: 1px solid #fff;
+  background-color: #fff;
+  color: #000;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.export button:disabled {
+  background-color: transparent;
+  color: #ccc;
+  cursor: not-allowed;
+  border: 1px solid #ccc;
+}
+
+.export button:not(:disabled):hover {
+  background-color: #efefef;
+  border: 1px solid #ccc;
+}
+
+/* User count display */
+#userCount {
+  font-size: 14px;
+  color: #555;
+  font-weight: 500;
+  margin-top: 10px;
+  transition: color 0.3s;
+}
+
+.export .controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* This will push elements to opposite ends */
+  margin-top: 10px;
+}
+
+.code-container #connectButton {
+  visibility: hidden;
+}
+.code-container.validCode #connectButton {
+  visibility: visible;
+}
+.code-container.connected #generateButton {
+  visibility: hidden;
+}
+
+#msgs {
+  height: 350px;
+  transition: height 0.3s ease;
+}
+#msgs.hide {
+  height: 60px;
+}
+.data .data-container {
+  display: none;
+}
+.data.open .data-container {
+  display: block;
+}
+#showData {
+  background: transparent;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  font-size: 14px;
+  font-weight: normal;
+  color: rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+  font-family: GTPressuraMonoLight, Avenir Next, Helvetica Neue, Helvetica,
+    Arial, sans-serif;
+}
+#showData:after {
+  content: "▼"; /* Default down arrow */
+  font-size: 12px;
+  margin-left: 20px; /* Space between text and arrow */
+  transition: transform 0.8s ease;
+}
+.open #showData::after {
+  content: "▲"; /* Up arrow */
+}
