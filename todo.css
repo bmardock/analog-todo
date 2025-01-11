@@ -767,24 +767,27 @@ a.coach {
   justify-content: center;
 }
 
-#syncButton {
+.export button {
   padding: 10px 20px;
   font-size: 14px;
   border-radius: 5px;
-  border: none;
-  background-color: #007bff;
-  color: #fff;
+  border: 1px solid #fff;
+  background-color: #fff;
+  color: #000;
   cursor: pointer;
   transition: background-color 0.3s;
 }
 
-#syncButton:disabled {
-  background-color: #ccc;
+.export button:disabled {
+  background-color: transparent;
+  color: #ccc;
   cursor: not-allowed;
+  border: 1px solid #ccc;
 }
 
-#syncButton:not(:disabled):hover {
-  background-color: #0056b3;
+.export button:not(:disabled):hover {
+  background-color: #efefef;
+  border: 1px solid #ccc;
 }
 
 /* User count display */
@@ -796,26 +799,6 @@ a.coach {
   transition: color 0.3s;
 }
 
-/* Show and Save Data buttons */
-#saveData {
-  padding: 8px 16px;
-  font-size: 14px;
-  border-radius: 5px;
-  border: none;
-  background-color: #007bff;
-  color: #fff;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  margin-top: 5px;
-}
-#saveData:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-#saveData:hover {
-  background-color: #0056b3;
-}
 .export .controls {
   display: flex;
   align-items: center;
