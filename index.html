@@ -137,8 +137,15 @@
       }
       // Initialize app
       databaseOpen(async () => {
-        await loadRoute();
-        window.addEventListener("hashchange", loadRoute);
+        //show info if user is new
+        getKeysFromStore("todo").then(async (todos) => {
+          console.log("todos", todos);
+          if (todos.length === 0) {
+            window.location.hash = "info";
+          }
+          await loadRoute();
+          window.addEventListener("hashchange", loadRoute);
+        });
         document
           .querySelector("footer")
           .addEventListener("click", handleFooterClick);

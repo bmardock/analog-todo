@@ -1,14 +1,28 @@
 <style>
   h3 {
-    margin: 8px 0 5px;
+    color: #000;
+    margin: 8px 0 15px;
   }
   p.desc {
     margin: 0;
   }
   iframe {
+    display: none;
     width: 390px;
     margin: 20px 0 10px -5px;
     height: 210px;
+  }
+  p.title {
+    color: #000;
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0;
+  }
+  button#showIframe {
+    border: 0;
+    padding: 0;
+    text-decoration: underline;
+    background: transparent;
   }
 </style>
 <iframe
@@ -16,30 +30,52 @@
   width="640"
   height="360"
   frameborder="0"
-  allow="autoplay; fullscreen;"
+  allow="fullscreen;"
   allowfullscreen
 >
 </iframe>
-<h3>1. Set A Weekly Goal</h3>
-<p class="desc">
-  In <strong>Goal</strong>, set a weekly goal and schedule a daily check-in
-  time.
-</p>
-<h3>2. Today’s Tasks</h3>
-<p class="desc">
-  In <strong>Todo</strong>, add today’s tasks and update progress throughtout
-  the day.
-</p>
-<h3>3. Next Tasks</h3>
-<p class="desc">
-  Use <strong>Next</strong> to store tasks that dont have an immediate date.
-</p>
-<h3>4. Someday Tasks</h3>
-<p class="desc">
-  Use <strong>Someday</strong> to track long term projects and goals.
-</p>
-<p>Stay organized and on track!</p>
 <p>
-  For more information on the
-  <a href="https://ugmonk.com/pages/analog-tips">Analog framework</a>
+  Inspired by the analog cards from
+  <button id="showIframe">UGMONK</button><br />Helping you stay organized,
+  focused, and on track.
 </p>
+
+<h3>How to Use:</h3>
+
+<p class="title">Set a Weekly Goal</p>
+<p class="desc">
+  Start by defining a weekly goal. Need help?<br />
+  Use the AI Coach for guidance.
+</p>
+
+<p class="title">Create Today's To-Do List</p>
+<p class="desc">
+  Every day, set aside time to plan your tasks.<br />
+  Focus on those that move you closer to your weekly goal.
+</p>
+
+<p class="title">Track Progress</p>
+<p class="desc">
+  Reference your tasks throughout the day and update them as you go.
+</p>
+
+<p class="title">Use the 'Next' Card</p>
+<p class="desc">
+  For tasks that aren’t urgent, add them to the 'Next' card to revisit later.
+</p>
+
+<p class="title">Someday Card for Big Goals</p>
+<p class="desc">
+  Track long-term projects or aspirations on the 'Someday' card.
+</p>
+
+<p class="title">End-of-Day Reflection</p>
+<p class="desc">
+  At the end of each day, review your progress. Copy over unfinished tasks and
+  plan for tomorrow.
+</p>
+<script>
+  document.getElementById("showIframe").addEventListener("click", function () {
+    document.querySelector("iframe").style.display = "block";
+  });
+</script>
