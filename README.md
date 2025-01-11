@@ -76,8 +76,6 @@ Go to [http://127.0.0.1:8080/](http://127.0.0.1:8080/) in your browser.
 
 ## Under the Hood
 
-## Under the Hood
-
 This app is built with a minimalist approach, leveraging modern web technologies for optimal performance and user experience:
 
 - **Vanilla JavaScript**: Developed using pure JavaScript for enhanced performance and maintainability, avoiding heavy frameworks.
