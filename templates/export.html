@@ -40,6 +40,11 @@
     const connectButton = document.getElementById("connectButton");
     const statusMessage = document.getElementById("status-message");
 
+    const connect_id = localStorage.getItem("connection_id");
+    if (connect_id) {
+      console.log("connect_id set:", connect_id);
+      codeInput.value = connect_id;
+    }
     //connectButton.style.visibility = 'hidden';
     let socket = null;
     generateButton.addEventListener("click", () => {
@@ -87,6 +92,8 @@
           generateButton.style.display = "none";
           container.classList.add("connected");
           codeInput.readOnly = true;
+          console.log("set connection id");
+          localStorage.setItem("connect_id", code);
         });
         socket.on("userCount", (count) => {
           let userMsg = "";
