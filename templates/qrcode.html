@@ -13,6 +13,7 @@
 </style>
 <main>
   <h1>QR Code Scanner with Test QR Code</h1>
+
   <video id="video" playsinline autoplay muted></video>
   <div id="result">QR Code Data: <span id="output"></span></div>
   <!-- Placeholder for QR Code -->
@@ -21,11 +22,21 @@
 <!-- Include jsQR and QR Code libraries -->
 <!-- //READ QR CODE -->
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-<!-- //GEN QR CODE -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.0.4/pako.min.js"></script>
 <script src="./js/export.js"></script>
 <script>
+  //set a local var for unique device id on device A
+  //  how do we ensure new users dont collide
+  //  how can we make sure others cant spoof // guess id
+  //show qr code of device id on device A
+  //scan qr code on device B
+  //device b will save device A id under shared list
+  //device b will send message to connect to device a
+  //device a will save device b under shared list
+
+  //on sync send info to shared devices
+
   const video = document.getElementById("video");
   const output = document.getElementById("output");
   async function startCamera() {
@@ -68,13 +79,73 @@
     }
     scan();
   }
+  function mapKeysByFirstLetter(jsonObj) {
+    const result = {};
+    const countTracker = {}; // Tracks the count for each first letter
+
+    function traverse(obj) {
+      if (Array.isArray(obj)) {
+        obj.forEach((item) => traverse(item));
+      } else if (typeof obj === "object" && obj !== null) {
+        Object.keys(obj).forEach((key) => {
+          const firstLetter = key[0].toLowerCase();
+
+          // Check if the key is already mapped
+          if (!Object.values(result).includes(key)) {
+            if (!result[firstLetter]) {
+              // First occurrence of this first letter
+              result[firstLetter] = key;
+              countTracker[firstLetter] = 1;
+            } else {
+              // Append a digit if the first letter is already used
+              countTracker[firstLetter]++;
+              const newKey = `${firstLetter}${countTracker[firstLetter]}`;
+              result[newKey] = key;
+            }
+          }
+
+          // Continue traversing nested objects
+          traverse(obj[key]);
+        });
+      }
+    }
+
+    traverse(jsonObj);
+    return result;
+  }
+
+  function replaceKeysWithFirstLetterMap(jsonObj, keyMap) {
+    const valueMap = Object.keys(keyMap).reduce(
+      (obj, key) => ((obj[keyMap[key]] = key), obj),
+      {}
+    );
+    function replace(obj) {
+      if (Array.isArray(obj)) {
+        return obj.map((item) => replace(item)); // Process array items
+      } else if (typeof obj === "object" && obj !== null) {
+        const newObj = {};
+        Object.keys(obj).forEach((key) => {
+          if (valueMap[key]) {
+            const newKey = valueMap[key];
+            newObj[newKey] = replace(obj[key]);
+          }
+        });
+        return newObj;
+      }
+      return obj; // Return primitive values as-is
+    }
+
+    return replace(jsonObj);
+  }
 
   exportData().then((jsonData) => {
-    const jsonString = JSON.stringify(jsonData);
-    const { shortenedObj, keyMap } = shortenKeys(jsonData);
-
-    console.log("Shortened JSON:", JSON.stringify(shortenedObj));
-    console.log("Key Map:", keyMap);
+    const jsonObj = JSON.parse(jsonData);
+    const keyMap = mapKeysByFirstLetter(jsonObj);
+    const jsonString = JSON.stringify(
+      replaceKeysWithFirstLetterMap(jsonObj, keyMap)
+    );
+    console.log(jsonObj);
+    console.log(keyMap);
     // Step 2: Compress using zlib (pako)
     const compressedData = pako.deflate(jsonString);
     // Step 3: Encode to Base64
@@ -97,35 +168,6 @@
     const qrCodeImage = qr.createImgTag(6); // Set size multiplier, e.g., 6 for larger
     document.getElementById("qrCode").innerHTML = qrCodeImage;
   }
-
-  function shortenKeys(obj) {
-    const keyMap = {}; // Store mappings of original keys to short keys
-    let keyCounter = 0; // Counter for unique short keys
-
-    function generateShortKey() {
-      return "k" + keyCounter++; // Generates k0, k1, k2, ...
-    }
-
-    function recursiveShorten(input) {
-      if (Array.isArray(input)) {
-        return input.map(recursiveShorten);
-      } else if (typeof input === "object" && input !== null) {
-        const newObj = {};
-        for (const key in input) {
-          if (!keyMap[key]) {
-            keyMap[key] = generateShortKey(); // Assign a short key
-          }
-          newObj[keyMap[key]] = recursiveShorten(input[key]);
-        }
-        return newObj;
-      }
-      return input; // Return primitive values as is
-    }
-
-    const shortenedObj = recursiveShorten(obj);
-    return { shortenedObj, keyMap }; // Return both shortened object and key map
-  }
-
   // Start camera and generate QR code on page load
   //startCamera();
   //generateTestQRCode();
