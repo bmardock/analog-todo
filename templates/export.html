@@ -39,12 +39,6 @@
     const syncButton = document.getElementById("syncButton");
     const connectButton = document.getElementById("connectButton");
     const statusMessage = document.getElementById("status-message");
-
-    const connect_id = localStorage.getItem("connect_id");
-    if (connect_id) {
-      console.log("connect_id set:", connect_id);
-      codeInput.value = connect_id;
-    }
     //connectButton.style.visibility = 'hidden';
     let socket = null;
     generateButton.addEventListener("click", () => {
@@ -165,5 +159,16 @@
         msg("Import completed!");
       });
     });
+
+    const connect_id = localStorage.getItem("connect_id");
+    if (connect_id) {
+      console.log("connect_id set:", connect_id);
+      codeInput.value = connect_id;
+      const isValidCode = /^\d{3}-\d{3}$/.test(codeInput.value);
+      if (isValidCode) {
+        container.classList.toggle("validCode", isValidCode);
+        connectButton.click();
+      }
+    }
   })();
 </script>
