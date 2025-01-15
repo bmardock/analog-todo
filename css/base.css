@@ -1,3 +1,10 @@
+@font-face {
+  font-family: Caveat;
+  src: url('../fonts/Caveat.woff2');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
 * {
   font-family: arial;
 }
