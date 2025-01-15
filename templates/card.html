@@ -6,11 +6,32 @@
      span class="weeklyGoal popunder" data-text="The goal for this week"
       >★</span
     -->
-    <input class="picker" name="title" type="text" placeholder="" />
+    <input
+      class="picker"
+      name="title"
+      type="text"
+      aria-label="card title"
+      placeholder=""
+    />
     <div class="cardSignal radio-group">
-      <input type="checkbox" name="signal1" class="radio-button" />
-      <input type="checkbox" name="signal2" class="radio-button" />
-      <input type="checkbox" name="signal3" class="radio-button" />
+      <input
+        aria-label="card signal"
+        type="checkbox"
+        name="signal1"
+        class="radio-button"
+      />
+      <input
+        aria-label="card signal"
+        type="checkbox"
+        name="signal2"
+        class="radio-button"
+      />
+      <input
+        aria-label="card signal"
+        type="checkbox"
+        name="signal3"
+        class="radio-button"
+      />
     </div>
   </header>
   <todoList>
@@ -25,7 +46,7 @@
           <a href="#"><i class="signal delegated"></i>delegated</a>
         </div>
       </div>
-      <input type="text" tabindex="1" />
+      <input aria-label="todo item" type="text" tabindex="1" />
       <select class="copy hidden">
         <option></option>
         <option>Today</option>
@@ -39,6 +60,7 @@
   <cal class="calendar"></cal>
   <div class="archive-button">
     <input
+      aria-label="archive card"
       name="archive"
       id="archive"
       type="checkbox"
