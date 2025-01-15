@@ -45,6 +45,8 @@ i {
   font-size: 12px;
   -webkit-text-stroke: 0.6px transparent;
 }
+i.calendar{background-image: url("../imgs/calendar.svg");}
+i.trending{background-image: url("../imgs/bar-chart.svg");}
 i.todo{background-image: url("../imgs/list.svg");}
 i.next{background-image: url("../imgs/next.svg");}
 i.someday{background-image: url("../imgs/someday.svg");}
