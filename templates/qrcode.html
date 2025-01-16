@@ -13,11 +13,12 @@
 </style>
 <main>
   <h1>QR Code Scanner with Test QR Code</h1>
-
+  <button id="startButton">Start Camera</button>
   <video id="video" playsinline autoplay muted></video>
   <div id="result">QR Code Data: <span id="output"></span></div>
   <!-- Placeholder for QR Code -->
   <div id="qrCode"></div>
+  <div id="jabCode"></div>
 </main>
 <!-- Include jsQR and QR Code libraries -->
 <!-- //READ QR CODE -->
@@ -26,6 +27,35 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.0.4/pako.min.js"></script>
 <script src="./js/export.js"></script>
 <script>
+  let jabcode;
+  import("./js/jabcodeJSLib.min.js").then((module) => {
+    const JabcodeJSInterface = module.default;
+    jabcode = new JabcodeJSInterface();
+
+    exportData().then((jsonData) => {
+      const jsonObj = JSON.parse(jsonData);
+      delete jsonObj.todo;
+      console.log(jsonObj);
+      const keyMap = mapKeysByFirstLetter(jsonObj);
+      const jsonString = JSON.stringify(
+        replaceKeysWithFirstLetterMap(jsonObj, keyMap)
+      );
+      // Step 2: Compress using zlib (pako)
+      const compressedData = pako.deflate(jsonString, { level: 1 });
+      // Step 3: Encode to Base64
+      const base64String = btoa(String.fromCharCode(...compressedData));
+      console.log(base64String, base64String.length);
+      const base64Image = jabcode.encode_message(base64String);
+      const img = document.createElement("img");
+      img.src = `${base64Image}`;
+      img.alt = "Generated JAB Code";
+      img.style.width = "300px"; // Optional: Adjust the size
+      img.style.height = "300px";
+      // Append the image to a container in the HTML
+      document.getElementById("jabCode").appendChild(img);
+    });
+  });
+
   //set a local var for unique device id on device A
   //  how do we ensure new users dont collide
   //  how can we make sure others cant spoof // guess id
@@ -36,25 +66,49 @@
   //device a will save device b under shared list
 
   //on sync send info to shared devices
-
   const video = document.getElementById("video");
   const output = document.getElementById("output");
+  const startButton = document.getElementById("startButton");
+  let isCameraRunning = false; // Track camera state
+
+  // 🔄 Toggle camera on button click
+  startButton.addEventListener("click", function () {
+    if (!isCameraRunning) {
+      startCamera();
+      startButton.textContent = "Stop Camera"; // Change button text
+    } else {
+      stopCamera();
+      startButton.textContent = "Start Camera";
+    }
+    isCameraRunning = !isCameraRunning; // Toggle state
+  });
+
+  // 📸 Function to start the camera
   async function startCamera() {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
+      cameraStream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "environment" },
       });
-      video.srcObject = stream;
+      video.srcObject = cameraStream;
       video.onloadedmetadata = () => {
         video.play();
-        scanQRCode();
+        scanJABCode();
       };
     } catch (error) {
       console.error("Error accessing camera:", error);
     }
   }
 
-  function scanQRCode() {
+  // ✋ Function to stop the camera
+  function stopCamera() {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((track) => track.stop()); // Stop all tracks
+      video.srcObject = null; // Disconnect video stream
+      console.log("Camera stopped.");
+    }
+  }
+
+  function scanJABCode() {
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d");
 
@@ -63,22 +117,30 @@
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const imageData = context.getImageData(
-          0,
-          0,
-          canvas.width,
-          canvas.height
-        );
-        const code = jsQR(imageData.data, imageData.width, imageData.height);
-        if (code) {
-          output.textContent = code.data;
-        } else {
-          requestAnimationFrame(scan);
-        }
+
+        // Convert the video frame to base64 PNG
+        const imageData = canvas.toDataURL("image/png");
+        // Decode JAB Code from the captured frame
+        jabcode
+          .decode_message(imageData)
+          .then((decodedData) => {
+            if (decodedData) {
+              output.textContent = decodedData; // Display decoded data
+            } else {
+              requestAnimationFrame(scan); // Keep scanning
+            }
+          })
+          .catch((error) => {
+            console.error("Decoding error:", error);
+            requestAnimationFrame(scan);
+          });
+      } else {
+        requestAnimationFrame(scan);
       }
     }
     scan();
   }
+
   function mapKeysByFirstLetter(jsonObj) {
     const result = {};
     const countTracker = {}; // Tracks the count for each first letter
@@ -137,38 +199,4 @@
 
     return replace(jsonObj);
   }
-
-  exportData().then((jsonData) => {
-    const jsonObj = JSON.parse(jsonData);
-    const keyMap = mapKeysByFirstLetter(jsonObj);
-    const jsonString = JSON.stringify(
-      replaceKeysWithFirstLetterMap(jsonObj, keyMap)
-    );
-    console.log(jsonObj);
-    console.log(keyMap);
-    // Step 2: Compress using zlib (pako)
-    const compressedData = pako.deflate(jsonString);
-    // Step 3: Encode to Base64
-    const base64String = btoa(String.fromCharCode(...compressedData));
-    console.log(base64String, base64String.length);
-    const qr = qrcode(0, "L");
-    qr.addData(base64String);
-    qr.make();
-    // Add the QR code with a larger size
-    const qrCodeImage = qr.createImgTag(6); // Set size multiplier, e.g., 6 for larger
-    document.getElementById("qrCode").innerHTML = qrCodeImage;
-  });
-
-  // Generate a larger QR code for testing
-  function generateTestQRCode() {
-    const qr = qrcode(0, "L");
-    qr.addData("Hello, world!");
-    qr.make();
-    // Add the QR code with a larger size
-    const qrCodeImage = qr.createImgTag(6); // Set size multiplier, e.g., 6 for larger
-    document.getElementById("qrCode").innerHTML = qrCodeImage;
-  }
-  // Start camera and generate QR code on page load
-  //startCamera();
-  //generateTestQRCode();
 </script>
