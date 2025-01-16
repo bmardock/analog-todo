@@ -1,9 +1,9 @@
 ![](./imgs/analog-bg.png)
 
 # Analog Todo App
+TL;DR A minimalist to-do app. [See it in action](https://bmardock.github.io/analog-todo/)
 
 ## What’s This Project?
-
 Managing work, life, and projects can be overwhelming. Traditional to-do lists often fail to keep users motivated and organized. This app aims to provide a more intuitive and goal-oriented approach to task management, inspired by analog design principles. It helps users structure daily tasks and long-term goals effectively.
 
 ---

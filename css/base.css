@@ -6,14 +6,11 @@
   font-display: swap;
 }
 * {
-  font-family: arial;
+  font-family: GTPressuraMonoLight, Avenir Next, Helvetica Neue, Helvetica,
+  Arial, sans-serif;
 }
 a {
   color: rgba(0, 0, 0, 0.6);
-}
-p {
-  font-family: GTPressuraMonoLight, Avenir Next, Helvetica Neue, Helvetica,
-    Arial, sans-serif;
 }
 p.desc {
   padding-left: 20px;
@@ -224,7 +221,6 @@ footer a {
   opacity: 0.5;
   display: inline-block; /* Ensures the background is visible */
   padding: 35px 20px 0; /* Adjust padding as needed */
-  background-image: url("award.svg");
   background-size: contain; /* Adjusts the SVG size to fit the element */
   background-repeat: no-repeat; /* Prevents the SVG from repeating */
   background-position: top center; /* Centers the SVG in the element */
