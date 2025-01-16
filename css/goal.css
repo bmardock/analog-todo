@@ -24,7 +24,7 @@ main input[type="time"] {
   min-width: 50%;
 }
 
-header {
+.goal header {
   display: block;
 }
 a.info {
