@@ -16,9 +16,8 @@ p.title {
   font-size: 15px;
   font-weight: 600;
   margin: 0;
-  padding:0 0 0 20px;
+  padding: 0 0 0 20px;
   position: relative;
-  
 }
 button#showIframe {
   border: 0;
@@ -26,15 +25,15 @@ button#showIframe {
   text-decoration: underline;
   background: transparent;
 }
-i {
-  padding-right:5px;
+.info i {
+  padding-right: 5px;
   opacity: 0.5;
-  top:0;
-  left:-5px;
+  top: 0;
+  left: -5px;
   position: absolute;
   display: inline-block; /* Ensures the background is visible */
-  width:20px;
-  height:20px; /* Adjust padding as needed */
+  width: 20px;
+  height: 20px; /* Adjust padding as needed */
   background-image: url("../imgs/award.svg");
   background-size: contain; /* Adjusts the SVG size to fit the element */
   background-repeat: no-repeat; /* Prevents the SVG from repeating */
@@ -45,8 +44,18 @@ i {
   font-size: 12px;
   -webkit-text-stroke: 0.6px transparent;
 }
-i.calendar{background-image: url("../imgs/calendar.svg");}
-i.trending{background-image: url("../imgs/bar-chart.svg");}
-i.todo{background-image: url("../imgs/list.svg");}
-i.next{background-image: url("../imgs/next.svg");}
-i.someday{background-image: url("../imgs/someday.svg");}
+.info i.calendar {
+  background-image: url("../imgs/calendar.svg");
+}
+.info i.trending {
+  background-image: url("../imgs/bar-chart.svg");
+}
+.info i.todo {
+  background-image: url("../imgs/list.svg");
+}
+.info i.next {
+  background-image: url("../imgs/next.svg");
+}
+.info i.someday {
+  background-image: url("../imgs/someday.svg");
+}
