@@ -1,0 +1,230 @@
+<style>
+    #result {
+      font-size: 1.2em;
+      margin-top: 10px;
+    }
+  
+    #jabCode img {
+      margin-top: 20px;
+    }
+  
+    #uploadButton {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 1em;
+      cursor: pointer;
+    }
+  
+    #uploadedImage {
+      width: 300px;
+      margin-top: 10px;
+      display: none;
+    }
+  </style>
+  
+  <main>
+    <h1>JAB Code Decoder from Uploaded Image</h1>
+    <!-- Upload Button -->
+    <input type="file" id="uploadButton" accept="image/*">
+    <!-- Preview Uploaded Image -->
+    <img id="uploadedImage" alt="Uploaded JAB Code">
+    <!-- Display Decoded Result -->
+    <div id="result">Decoded JAB Code:<span id="output"></span></div>
+    <!-- Placeholder for Generated JAB Code -->
+    <div id="jabCode"></div>
+  </main>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.0.4/pako.min.js"></script>
+  <script src="./js/export.js"></script>
+  
+  <script>
+    let jabcode;  // Global jabcode instance
+  
+    // Load the JABCodeJS library
+    import("./js/jabcodeJSLib.min.js").then((module) => {
+      const JabcodeJSInterface = module.default;
+      jabcode = new JabcodeJSInterface();
+  
+      // Generate a test JAB Code
+      exportData().then((jsonData) => {
+        let jsonObj = JSON.parse(jsonData);
+        const keyMap = mapKeysByFirstLetter(jsonObj);
+        //jsonObj = replaceKeysWithFirstLetterMap(jsonObj, keyMap);
+        const jsonString = JSON.stringify(jsonObj);
+        console.log(jsonString);
+        // Compress and encode data
+        const compressedData = pako.deflate(jsonString, { level: 1 });
+        const base64String = btoa(String.fromCharCode(...compressedData));
+        console.log('base64 string', base64String, base64String.length);
+        // Generate JAB Code image
+        // Generate the JAB Code image
+        const base64Image = jabcode.encode_message(base64String);
+
+
+        // Create a new Image object
+        const img = new Image();
+        img.src = base64Image;
+        img.alt = "Generated JAB Code";
+        img.style.width = "300px";
+        img.style.height = "300px";
+
+        // Handle image load success
+        img.onload = function () {
+  const canvas = document.createElement("canvas");
+  canvas.width = img.width;
+  canvas.height = img.height;
+  const context = canvas.getContext("2d");
+
+  // Disable image smoothing for sharp decoding
+  context.imageSmoothingEnabled = false;
+
+  // Draw image on canvas to flatten transparency
+  context.drawImage(img, 0, 0);
+
+  // Convert the canvas back to PNG (no transparency)
+  const finalImage = new Image();
+  finalImage.src = canvas.toDataURL("image/png");
+  finalImage.alt = "Optimized JAB Code";
+  finalImage.style.width = "300px";
+  finalImage.style.height = "300px";
+
+  // Append the optimized image to the page
+  document.getElementById("jabCode").appendChild(finalImage);
+};
+
+        // Handle image load failure
+        img.onerror = function () {
+            console.error("Failed to load the JAB Code image.");
+            alert("Error: The generated image is in an unsupported format.");
+        };
+        });
+    });
+  
+    const uploadButton = document.getElementById("uploadButton");
+    const uploadedImage = document.getElementById("uploadedImage");
+    const output = document.getElementById("output");
+  
+    // 📸 Handle image upload and decode JAB Code
+    uploadButton.addEventListener("change", function (event) {
+  const file = event.target.files[0];
+  if (file && file.type.startsWith("image/")) {
+    const reader = new FileReader();
+    console.log('check image');
+    reader.onload = function (e) {
+      const imageSrc = e.target.result;
+      const img = new Image();
+      img.src = imageSrc;
+
+      img.onload = function () {
+        // Resize image to reduce pixel size
+        const canvas = document.createElement("canvas");
+        const maxDimension = 600;  // Max width/height
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxDimension) {
+            height *= maxDimension / width;
+            width = maxDimension;
+          }
+        } else {
+          if (height > maxDimension) {
+            width *= maxDimension / height;
+            height = maxDimension;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Convert resized image back to base64
+        const resizedImageSrc = canvas.toDataURL("image/png");
+        decodeUploadedImage(resizedImageSrc);
+      };
+    };
+    reader.readAsDataURL(file);
+  } else {
+    alert("Please upload a valid image file.");
+  }
+});
+  
+    // 🔍 Decode the uploaded JAB Code image
+    function decodeUploadedImage(imageData) {
+      jabcode.decode_message(imageData)
+        .then((decodedData) => {
+          if (decodedData) {
+            console.log('decode', decodedData);
+            const binaryString = atob(decodedData);
+            const binaryData = Uint8Array.from(binaryString, char => char.charCodeAt(0));
+            // Step 2: Decompress the binary data using pako.inflate
+            const decompressedData = pako.inflate(binaryData, { to: 'string' });
+            // Step 3: Parse the decompressed JSON string
+            const jsonObj = JSON.parse(decompressedData);
+            console.log('json', jsonObj);
+            // Step 4: Display the JSON object in a readable format
+            output.textContent = JSON.stringify(jsonObj, null, 2);
+          } else {
+            output.textContent = "No JAB Code detected in the image.";
+          }
+        })
+        .catch((error) => {
+          console.error("Decoding error:", error);
+          output.textContent = "Error decoding the image.";
+        });
+    }
+  
+    // 📦 Helper Functions
+    function mapKeysByFirstLetter(jsonObj) {
+      const result = {};
+      const countTracker = {};
+      function traverse(obj) {
+        if (Array.isArray(obj)) {
+          obj.forEach(traverse);
+        } else if (typeof obj === "object" && obj !== null) {
+          Object.keys(obj).forEach((key) => {
+            const firstLetter = key[0].toLowerCase();
+            if (!Object.values(result).includes(key)) {
+              if (!result[firstLetter]) {
+                result[firstLetter] = key;
+                countTracker[firstLetter] = 1;
+              } else {
+                countTracker[firstLetter]++;
+                const newKey = `${firstLetter}${countTracker[firstLetter]}`;
+                result[newKey] = key;
+              }
+            }
+            traverse(obj[key]);
+          });
+        }
+      }
+      traverse(jsonObj);
+      return result;
+    }
+  
+    function replaceKeysWithFirstLetterMap(jsonObj, keyMap) {
+      const valueMap = Object.keys(keyMap).reduce(
+        (obj, key) => ((obj[keyMap[key]] = key), obj),
+        {}
+      );
+  
+      function replace(obj) {
+        if (Array.isArray(obj)) {
+          return obj.map(replace);
+        } else if (typeof obj === "object" && obj !== null) {
+          const newObj = {};
+          Object.keys(obj).forEach((key) => {
+            if (valueMap[key]) {
+              const newKey = valueMap[key];
+              newObj[newKey] = replace(obj[key]);
+            }
+          });
+          return newObj;
+        }
+        return obj;
+      }
+  
+      return replace(jsonObj);
+    }
+  </script>
