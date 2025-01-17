@@ -1,0 +1,220 @@
+<main>
+  <style>
+    textarea {
+      width: 100%;
+      height: 100px;
+      margin-bottom: 10px;
+    }
+    #roleSelection,
+    #firstDevice,
+    #secondDevice {
+      margin-bottom: 20px;
+    }
+    #firstDevice,
+    #secondDevice {
+      display: none;
+    }
+    #messages {
+      display: none;
+    }
+    #secondDevice #answerWrapper {
+      display: none;
+    }
+  </style>
+  <!-- Role Selection -->
+  <div id="roleSelection">
+    <button onclick="selectRole('first')">First Device (Offerer)</button>
+    <button onclick="selectRole('second')">Second Device (Answerer)</button>
+  </div>
+
+  <!-- First Device (Offerer) -->
+  <div id="firstDevice">
+    <textarea id="localOffer" placeholder="Generated Offer"></textarea>
+    <textarea
+      id="remoteAnswer"
+      placeholder="Paste Answer from Second Device"
+    ></textarea>
+  </div>
+
+  <!-- Second Device (Answerer) -->
+  <div id="secondDevice">
+    <textarea
+      id="remoteOffer"
+      placeholder="Paste Offer from First Device"
+    ></textarea>
+    <div id="answerWrapper">
+      <p>Copy answer and paste to First Device</p>
+      <textarea id="localAnswer" placeholder="Generated Answer"></textarea>
+    </div>
+  </div>
+  <div id="messages">
+    <input id="message" placeholder="Message to Send" />
+    <button id="sendMessage">Send Message</button><br />
+
+    <h3>Received Messages:</h3>
+    <pre id="receivedMessage">...</pre>
+  </div>
+</main>
+<script>
+  let localConnection, remoteConnection, dataChannel;
+
+  // Toggle UI based on role selection
+  function selectRole(role) {
+    document.getElementById("roleSelection").style.display = "none";
+    if (role === "first") {
+      document.getElementById("firstDevice").style.display = "block";
+      setupFirstDevice();
+    } else if (role === "second") {
+      document.getElementById("secondDevice").style.display = "block";
+      setupSecondDevice();
+    }
+  }
+
+  // First Device (Offerer) Setup
+  function setupFirstDevice() {
+    console.log("🔧 Setting up First Device (Offerer)");
+    createOffer();
+    document.getElementById("remoteAnswer").oninput = () => {
+      setAnswer();
+    };
+  }
+
+  // Second Device (Answerer) Setup
+  function setupSecondDevice() {
+    console.log("🔧 Setting up Second Device (Answerer)");
+    document.getElementById("remoteOffer").oninput = () => {
+      setOffer();
+    };
+    document.getElementById("sendMessage").onclick = () => {
+      sendMessage();
+    };
+  }
+
+  const createOffer = async () => {
+    console.log("📞 Creating Offer...");
+    localConnection = new RTCPeerConnection({
+      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+    });
+
+    // Create Data Channel
+    dataChannel = localConnection.createDataChannel("chat");
+    setupDataChannel(dataChannel, "firstDevice");
+
+    // ICE Gathering
+    localConnection.onicecandidate = (event) => {
+      if (!event.candidate) {
+        console.log("✅ ICE gathering complete (Offerer).");
+        document.getElementById("localOffer").value = JSON.stringify(
+          localConnection.localDescription
+        );
+        document.getElementById("localOffer").select();
+      }
+    };
+
+    try {
+      const offer = await localConnection.createOffer();
+      await localConnection.setLocalDescription(offer);
+      console.log("📜 Offer created and set.");
+    } catch (err) {
+      console.error("❌ Error creating offer:", err);
+    }
+  };
+
+  const setAnswer = async () => {
+    console.log("📥 Setting remote answer...");
+    const remoteAnswer = JSON.parse(
+      document.getElementById("remoteAnswer").value
+    );
+
+    try {
+      await localConnection.setRemoteDescription(
+        new RTCSessionDescription(remoteAnswer)
+      );
+      console.log("✅ Remote answer set.");
+    } catch (err) {
+      console.error("❌ Error setting remote answer:", err);
+    }
+  };
+  const setOffer = async () => {
+    document.getElementById("remoteOffer").style.display = "none";
+    document.getElementById("answerWrapper").style.display = "block";
+    console.log("📥 Setting remote offer...");
+    remoteConnection = new RTCPeerConnection({
+      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+    });
+
+    // Handle Incoming Data Channel
+    remoteConnection.ondatachannel = (event) => {
+      console.log("📥 Data channel received (Answerer).");
+      dataChannel = event.channel; // ✅ Fix: Assign to dataChannel
+      setupDataChannel(dataChannel, "secondDevice");
+    };
+
+    // ICE Gathering
+    remoteConnection.onicecandidate = (event) => {
+      if (!event.candidate) {
+        console.log("✅ ICE gathering complete (Answerer).");
+        document.getElementById("localAnswer").value = JSON.stringify(
+          remoteConnection.localDescription
+        );
+        document.getElementById("localAnswer").select();
+      }
+    };
+
+    try {
+      const remoteOffer = JSON.parse(
+        document.getElementById("remoteOffer").value
+      );
+      await remoteConnection.setRemoteDescription(
+        new RTCSessionDescription(remoteOffer)
+      );
+
+      const answer = await remoteConnection.createAnswer();
+      await remoteConnection.setLocalDescription(answer);
+      console.log("📜 Answer created and set.");
+    } catch (err) {
+      console.error("❌ Error setting offer/answer:", err);
+    }
+  };
+
+  const sendMessage = () => {
+    const message = document.getElementById("message").value;
+    if (dataChannel && dataChannel.readyState === "open") {
+      console.log(`📤 Sending message: ${message}`);
+      dataChannel.send(JSON.stringify({ message }));
+      displayMessage(`You: ${message}`, "secondDevice");
+    } else {
+      console.error("❌ Data channel is not open.");
+      alert("Connection not established yet.");
+    }
+  };
+
+  // Data Channel Setup (Both Devices)
+  function setupDataChannel(channel, device) {
+    console.log("🔧 Setting up data channel...");
+
+    channel.onopen = () => {
+      console.log(`✅ Data channel is OPEN on ${device}.`);
+      document.getElementById("messages").style.display = "block";
+      document.getElementById("firstDevice").style.display = "none";
+      document.getElementById("secondDevice").style.display = "none";
+      //document.getElementById('message').value = "Connection established! Ready to chat.";
+    };
+
+    channel.onmessage = (event) => {
+      const received = JSON.parse(event.data);
+      console.log(`📥 Received message on ${device}: ${received.message}`);
+      displayMessage(`Friend: ${received.message}`, device);
+    };
+
+    channel.onerror = (error) => console.error("❌ Data channel error:", error);
+    channel.onclose = () => console.warn("⚠️ Data channel closed.");
+  }
+
+  // Helper to Display Messages on the Page
+  function displayMessage(message, device) {
+    console.log("add message");
+    const output = document.getElementById("receivedMessage");
+    output.textContent += `\n${message}`;
+  }
+</script>

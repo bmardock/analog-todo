@@ -23,15 +23,16 @@
 </style>
 
 <main>
-  <h1>JAB Code Decoder from Uploaded Image</h1>
+  <p>JAB Code Decoder from Uploaded Image</p>
   <!-- Upload Button -->
+  <div id="jabCode"></div>
   <input type="file" id="uploadButton" accept="image/*" />
   <!-- Preview Uploaded Image -->
   <img id="uploadedImage" alt="Uploaded JAB Code" />
   <!-- Display Decoded Result -->
-  <div id="result">Decoded JAB Code:<span id="output"></span></div>
+  <div id="result">Decoded JAB Code:</div>
+  <div id="output"></div>
   <!-- Placeholder for Generated JAB Code -->
-  <div id="jabCode"></div>
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.0.4/pako.min.js"></script>
