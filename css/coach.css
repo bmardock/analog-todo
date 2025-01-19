@@ -43,7 +43,8 @@ textarea {
 }
 .user {
   position: relative;
-  font-weight: bold;
+  text-wrap: wrap;
+  white-space: pre;
   color: #333;
   border-radius: 5px;
   padding: 10px;
