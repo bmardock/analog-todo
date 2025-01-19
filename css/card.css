@@ -1,10 +1,17 @@
 /* CARD CSS */
-header .listType {
+header #listType {
   border: none;
   font-size: 18px;
   color: rgba(0, 0, 0, 0.6);
   display: inline-block;
   cursor: none;
+}
+header #listType[data-text] {
+  background-image: url(../imgs/ai-agent.svg);
+  background-position: top right;
+  background-repeat: no-repeat;
+  padding-right: 22px;
+  background-size: 20px 20px;
 }
 header input.picker {
   float: right;
@@ -17,8 +24,8 @@ header input.picker {
   text-wrap: nowrap;
   text-transform: uppercase;
   position: relative;
-  -webkit-appearance: none;
-  -webkit-border-radius: 0;
+  appearance: none;
+  border-radius: 0;
   color: #000;
   height: 24px;
   font-size: 24px;
@@ -414,14 +421,16 @@ label.archive:hover {
 .popunder:hover::after {
   content: attr(data-text);
   position: absolute;
-  bottom: 40px; /* Adjust based on desired distance */
-  left: 50%;
+  bottom: 40px;
+  left: 50%; /* Adjust based on desired distance */
   transform: translateX(-50%);
   background-color: #333;
   color: white;
   padding: 5px 10px;
   border-radius: 5px;
-  white-space: nowrap;
+  width: 350px;
+  white-space: pre;
+  word-wrap: break-word; /* Break long words if needed */
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   font-size: 12px;
   z-index: 100;
@@ -429,6 +438,7 @@ label.archive:hover {
 .popunder:hover::after {
   top: 30px;
   bottom: inherit;
+  z-index: 200;
 }
 
 .circle:hover::after {

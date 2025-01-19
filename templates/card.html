@@ -1,18 +1,9 @@
 <link rel="stylesheet" href="./css/card.css" />
 <card class="front active">
   <header>
-    <input
-      aria-label="card type"
-      class="listType"
-      type="text"
-      name="listType"
-      readonly
-      value=""
-    />
-    <!-- #TOOD get weekly goal and show it 
-     span class="weeklyGoal popunder" data-text="The goal for this week"
-      >★</span
-    -->
+    <div class="listWrapper">
+      <span id="listType" class="popunder"></span>
+    </div>
     <input
       class="picker"
       name="title"
@@ -101,8 +92,8 @@
     hash = hash === "todo" ? "today" : hash;
     const listType = hash[0].toUpperCase() + hash.slice(1).toLowerCase();
 
-    document.querySelector("[name=listType]").value = listType;
-    document.querySelector(".listType").innerHTML = listType;
+    //document.querySelector("#listType").text = listType;
+    document.querySelector("#listType").textContent = listType;
 
     let placeholderTxt = "";
     if (listType == "Today") {
@@ -282,5 +273,27 @@
     console.log("start mgmt");
     mgmt.setupTodos();
     mgmt.init();
+    if (listType == "Today") {
+      const date = new Date();
+      const year = date.getUTCFullYear();
+      const startOfYear = new Date(Date.UTC(year, 0, 1));
+      const daysDifference = Math.floor((date - startOfYear) / 86400000);
+      const week = Math.ceil(
+        (daysDifference + startOfYear.getUTCDay() + 1) / 7
+      );
+      const goalKey = `${year}-${week.toString().padStart(2, "0")}`;
+      getKeyFromStore("weeklyGoals", goalKey)
+        .then((result) => {
+          if (result) {
+            console.log("Weekly goals retrieved:", result.goalText);
+            document.getElementById("listType").dataset.text = result.goalText;
+          } else {
+            console.log("No goals found.");
+          }
+        })
+        .catch((error) => {
+          console.error("Error reading weekly goals:", error);
+        });
+    }
   })();
 </script>
