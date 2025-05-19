@@ -331,3 +331,129 @@ if (!window.TodoApp || !window.TodoApp.cardManager) {
 } else {
   window.TodoApp.cardManager.init();
 }
+
+// Pull to refresh implementation
+let touchStartY = 0;
+let touchEndY = 0;
+const pullThreshold = 100; // pixels to pull before triggering refresh
+let isPulling = false;
+let pullDistance = 0;
+
+document.addEventListener(
+  "touchstart",
+  (e) => {
+    if (window.scrollY === 0) {
+      touchStartY = e.touches[0].clientY;
+      isPulling = true;
+    }
+  },
+  { passive: true }
+);
+
+document.addEventListener(
+  "touchmove",
+  (e) => {
+    if (!isPulling) return;
+
+    touchEndY = e.touches[0].clientY;
+    pullDistance = touchEndY - touchStartY;
+
+    if (pullDistance > 0) {
+      e.preventDefault();
+      const pullIndicator =
+        document.getElementById("pull-indicator") || createPullIndicator();
+      const progress = Math.min(pullDistance / pullThreshold, 1);
+      pullIndicator.style.transform = `translateY(${pullDistance}px)`;
+      pullIndicator.style.opacity = progress;
+
+      if (progress >= 1) {
+        pullIndicator.classList.add("ready");
+      } else {
+        pullIndicator.classList.remove("ready");
+      }
+    }
+  },
+  { passive: false }
+);
+
+document.addEventListener("touchend", () => {
+  if (!isPulling) return;
+
+  const pullIndicator = document.getElementById("pull-indicator");
+  if (pullIndicator) {
+    if (pullDistance >= pullThreshold) {
+      pullIndicator.classList.add("refreshing");
+      // Trigger refresh
+      window.location.reload();
+    } else {
+      pullIndicator.style.transform = "";
+      pullIndicator.style.opacity = "";
+    }
+  }
+
+  isPulling = false;
+  pullDistance = 0;
+});
+
+function createPullIndicator() {
+  const indicator = document.createElement("div");
+  indicator.id = "pull-indicator";
+  indicator.innerHTML = `
+    <div class="pull-indicator-content">
+      <svg class="spinner" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
+      </svg>
+      <span>Pull to refresh</span>
+    </div>
+  `;
+  document.body.appendChild(indicator);
+  return indicator;
+}
+
+// Add pull indicator styles
+const style = document.createElement("style");
+style.textContent = `
+  #pull-indicator {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 60px;
+    transform: translateY(-100%);
+    transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+    pointer-events: none;
+    z-index: 1000;
+  }
+  
+  .pull-indicator-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(0, 0, 0, 0.6);
+  }
+  
+  .spinner {
+    width: 24px;
+    height: 24px;
+    animation: spin 1s linear infinite;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  
+  #pull-indicator.ready .spinner {
+    opacity: 1;
+  }
+  
+  #pull-indicator.refreshing .spinner {
+    opacity: 1;
+  }
+  
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+`;
+document.head.appendChild(style);
