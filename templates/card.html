@@ -85,219 +85,248 @@
 <script src="./js/global.js"></script>
 <script>
   (function () {
-    const DEBUG = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    const debugLog = (...args) => { if (DEBUG) console.log(...args); };
-    const debugError = (...args) => { if (DEBUG) console.error(...args); };
+    // Use global debug helpers if available
+    if (!window.DEBUG) {
+      window.DEBUG = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      window.debugLog = (...args) => { if (window.DEBUG) console.log(...args); };
+      window.debugError = (...args) => { if (window.DEBUG) console.error(...args); };
+    }
+    const debugLog = window.debugLog;
+    const debugError = window.debugError;
     
     debugLog("set mgmt");
+    
+    // Wait for TodoApp to be initialized
+    if (!window.TodoApp || !window.TodoApp.cardManager) {
+      debugError("TodoApp.cardManager not initialized yet");
+      // Try again after a short delay
+      setTimeout(() => {
+        if (window.TodoApp && window.TodoApp.cardManager) {
+          initCard();
+        } else {
+          debugError("TodoApp.cardManager still not available");
+        }
+      }, 100);
+      return;
+    }
+    
     const mgmt = window.TodoApp.cardManager;
+    
+    function initCard() {
+      const mgmt = window.TodoApp.cardManager;
+      
+      let hash = location.hash.slice(1) || "today";
+      hash = hash === "todo" ? "today" : hash;
+      const listType = hash[0].toUpperCase() + hash.slice(1).toLowerCase();
 
-    let hash = location.hash.slice(1) || "today";
-    hash = hash === "todo" ? "today" : hash;
-    const listType = hash[0].toUpperCase() + hash.slice(1).toLowerCase();
+      //document.querySelector("#listType").text = listType;
+      document.querySelector("#listType").textContent = listType;
 
-    //document.querySelector("#listType").text = listType;
-    document.querySelector("#listType").textContent = listType;
+      let placeholderTxt = "";
+      if (listType == "Today") {
+        const today = new Date().toLocaleDateString("en-CA");
+        const urlParams = new URLSearchParams(window.location.search);
+        document.querySelector(".picker").value = urlParams.get("date") || today;
+        document.querySelector(".picker").name = "date";
+        document.querySelector(".picker").type = "date";
+        debugLog("picker", document.querySelector(".picker").value);
+        placeholderTxt = "mm/dd/yyyy";
 
-    let placeholderTxt = "";
-    if (listType == "Today") {
-      const today = new Date().toLocaleDateString("en-CA");
-      const urlParams = new URLSearchParams(window.location.search);
-      document.querySelector(".picker").value = urlParams.get("date") || today;
-      document.querySelector(".picker").name = "date";
-      document.querySelector(".picker").type = "date";
-      debugLog("picker", document.querySelector(".picker").value);
-      placeholderTxt = "mm/dd/yyyy";
-
-      document.querySelector(".calendar").addEventListener("click", (e) => {
-        const targetLink = e.target.closest("a");
-        if (!targetLink) return;
-        e.preventDefault();
-        const href = targetLink.getAttribute("href");
-        const dateValue = new URLSearchParams(
-          new URL(href, window.location.origin).search
-        ).get("date");
-        document.querySelector(".picker").value = dateValue;
-        mgmt.fetchAndRender();
-      });
-    } else {
-      document.querySelector(".picker").name = "name";
-      document.querySelector(".picker").type = "text";
-      placeholderTxt =
-        listType == "Next"
-          ? new Date().toLocaleString("default", { month: "long" })
-          : new Date().getFullYear();
-      // handle next list click
-      document.querySelectorAll(".list").forEach((el) =>
-        el.addEventListener("click", ({ target }) => {
-          if (target.className == "circle") {
-            document
-              .querySelectorAll(".list .on")
-              .forEach((el) => el.classList.remove("on"));
-            let name = target.getAttribute("data-text");
-            if (name == "Add New") {
-              debugLog("show new list");
-              name = "";
-              document.querySelector(".picker").readonly = false;
+        document.querySelector(".calendar").addEventListener("click", (e) => {
+          const targetLink = e.target.closest("a");
+          if (!targetLink) return;
+          e.preventDefault();
+          const href = targetLink.getAttribute("href");
+          const dateValue = new URLSearchParams(
+            new URL(href, window.location.origin).search
+          ).get("date");
+          document.querySelector(".picker").value = dateValue;
+          mgmt.fetchAndRender();
+        });
+      } else {
+        document.querySelector(".picker").name = "name";
+        document.querySelector(".picker").type = "text";
+        placeholderTxt =
+          listType == "Next"
+            ? new Date().toLocaleString("default", { month: "long" })
+            : new Date().getFullYear();
+        // handle next list click
+        document.querySelectorAll(".list").forEach((el) =>
+          el.addEventListener("click", ({ target }) => {
+            if (target.className == "circle") {
+              document
+                .querySelectorAll(".list .on")
+                .forEach((el) => el.classList.remove("on"));
+              let name = target.getAttribute("data-text");
+              if (name == "Add New") {
+                debugLog("show new list");
+                name = "";
+                document.querySelector(".picker").readonly = false;
+              }
+              document.querySelector(".picker").value = name;
+              mgmt.fetchAndRender();
             }
-            document.querySelector(".picker").value = name;
+          })
+        );
+        //toggle archive list
+        document
+          .querySelector(".archive-header")
+          .addEventListener("click", ({ target }) => {
+            target.parentNode.classList.toggle("open");
+          });
+        //archive button
+        document
+          .querySelector("#archive")
+          .addEventListener("change", mgmt.saveAndRender);
+      }
+      document
+        .querySelector(".picker")
+        .addEventListener("change", async ({ target }) => {
+          if (target.name == "name") {
+            debugLog("Original Value:", target.value);
+            try {
+              // Get the unique card name asynchronously
+              const uniqueName = await mgmt.getUniqueCardName(target.value);
+              debugLog("Unique Name:", uniqueName);
+              // Update the input field with the unique name
+              //target.value = uniqueName;
+              document.querySelector(".picker").value = uniqueName;
+              debugLog("NAME", target.value);
+              return;
+            } catch (error) {
+              debugError("Error generating unique card name:", error);
+            }
+          } else {
+            debugLog("picker change fetch and render");
             mgmt.fetchAndRender();
           }
-        })
-      );
-      //toggle archive list
-      document
-        .querySelector(".archive-header")
-        .addEventListener("click", ({ target }) => {
-          target.parentNode.classList.toggle("open");
         });
-      //archive button
-      document
-        .querySelector("#archive")
-        .addEventListener("change", mgmt.saveAndRender);
-    }
-    document
-      .querySelector(".picker")
-      .addEventListener("change", async ({ target }) => {
-        if (target.name == "name") {
-          debugLog("Original Value:", target.value);
+      debugLog("set picker");
+      debugLog(placeholderTxt);
+      document.querySelector(".picker").placeholder = placeholderTxt;
+
+      //todoList change
+      document.querySelector("todoList")?.addEventListener("change", async (e) => {
+        if (e.target.className === "copy") {
+          //#todo set loading and complete state
+          const copyTo = e.target.value.toLowerCase();
+          const signal = e.target.parentNode.querySelector(".signal").value;
+          const text = e.target.parentNode.querySelector("input").value;
           try {
-            // Get the unique card name asynchronously
-            const uniqueName = await mgmt.getUniqueCardName(target.value);
-            debugLog("Unique Name:", uniqueName);
-            // Update the input field with the unique name
-            //target.value = uniqueName;
-            document.querySelector(".picker").value = uniqueName;
-            debugLog("NAME", target.value);
-            return;
+            // Wait for copyTaskToList to complete
+            await mgmt.copyTaskToList(copyTo, signal, text);
+            // Trigger renderCalList after copyTaskToList is completed
+            mgmt.renderCalList();
           } catch (error) {
-            debugError("Error generating unique card name:", error);
+            debugError("Error while copying task or rendering list:", error);
           }
         } else {
-          debugLog("picker change fetch and render");
-          mgmt.fetchAndRender();
+          debugLog("Change detected");
+          mgmt.saveAndRender();
         }
       });
-    debugLog("set picker");
-    debugLog(placeholderTxt);
-    document.querySelector(".picker").placeholder = placeholderTxt;
-
-    //todoList change
-    document.querySelector("todoList").addEventListener("change", async (e) => {
-      if (e.target.className === "copy") {
-        //#todo set loading and complete state
-        const copyTo = e.target.value.toLowerCase();
-        const signal = e.target.parentNode.querySelector(".signal").value;
-        const text = e.target.parentNode.querySelector("input").value;
-        try {
-          // Wait for copyTaskToList to complete
-          await mgmt.copyTaskToList(copyTo, signal, text);
-          // Trigger renderCalList after copyTaskToList is completed
-          mgmt.renderCalList();
-        } catch (error) {
-          debugError("Error while copying task or rendering list:", error);
-        }
-      } else {
-        debugLog("Change detected");
-        mgmt.saveAndRender();
-      }
-    });
-    document.querySelector("todoList").addEventListener("click", (e) => {
-      e.preventDefault();
-      const anchor = e.target.closest("a");
-      const dropdownContent = e.target.closest(".dropdown-content");
-      if (anchor && dropdownContent) {
-        debugLog("dropdown select");
-        const selection = anchor.textContent.trim();
-        const button = dropdownContent.parentNode.querySelector("button");
-        if (button) {
-          button.className = `signal ${selection}`;
-          button.value = selection;
-        }
-        dropdownContent.parentNode.blur();
-        anchor.blur();
-        mgmt.saveAndRender();
-      }
-    });
-
-    //select entire todo item
-    document
-      .querySelector("todoList")
-      .addEventListener("focusin", ({ target }) => {
-        if (target.matches("input")) {
-          target.setSelectionRange(0, target.value.length);
-          target.addEventListener("keydown", function handleKeydown(event) {
-            if (event.key === "Enter") {
-              debugLog("Enter button clicked");
-              const inputs = Array.from(
-                document.querySelector("todoList").querySelectorAll("input")
-              );
-              const currentIndex = inputs.indexOf(target);
-              // Find the next input in the list, or loop back to the first one
-              const nextInput = inputs[currentIndex + 1] || inputs[0];
-              nextInput.focus(); // Move focus to the next input
-              target.removeEventListener("keydown", handleKeydown);
-            }
-          });
-        }
-      });
-
-    document
-      .querySelector(".cardSignal")
-      .addEventListener("change", mgmt.saveAndRender);
-    document
-      .querySelector("[name=braindump]")
-      .addEventListener("focusout", mgmt.saveAndRender);
-
-    const flippers = document.querySelectorAll(".flip");
-    flippers[0].addEventListener("click", () => {
-      mgmt.changeContent(1);
-    });
-    flippers[1].addEventListener("click", () => {
-      mgmt.changeContent(-1);
-    });
-
-    // Attach event listeners on keys
-    document.addEventListener("keydown", (e) => {
-      // Check if the focused element is an input, textarea, or contenteditable
-      const activeElement = document.activeElement;
-      const isInputFocused =
-        activeElement.tagName === "INPUT" ||
-        activeElement.tagName === "TEXTAREA" ||
-        activeElement.isContentEditable;
-      if (!isInputFocused) {
-        if (e.key === "ArrowLeft") {
-          mgmt.changeContent(-1);
-        }
-        if (e.key === "ArrowRight") {
-          mgmt.changeContent(1);
-        }
-      }
-    });
-    debugLog("start mgmt");
-    mgmt.setupTodos();
-    mgmt.init();
-    if (listType == "Today") {
-      const date = new Date();
-      const year = date.getUTCFullYear();
-      const startOfYear = new Date(Date.UTC(year, 0, 1));
-      const daysDifference = Math.floor((date - startOfYear) / 86400000);
-      const week = Math.ceil(
-        (daysDifference + startOfYear.getUTCDay() + 1) / 7
-      );
-      const goalKey = `${year}-${week.toString().padStart(2, "0")}`;
-      getKeyFromStore("weeklyGoals", goalKey)
-        .then((result) => {
-          if (result) {
-            debugLog("Weekly goals retrieved:", result.goalText);
-            document.getElementById("listType").dataset.text = result.goalText;
-          } else {
-            debugLog("No goals found.");
+      document.querySelector("todoList")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        const anchor = e.target.closest("a");
+        const dropdownContent = e.target.closest(".dropdown-content");
+        if (anchor && dropdownContent) {
+          debugLog("dropdown select");
+          const selection = anchor.textContent.trim();
+          const button = dropdownContent.parentNode.querySelector("button");
+          if (button) {
+            button.className = `signal ${selection}`;
+            button.value = selection;
           }
-        })
-        .catch((error) => {
-          debugError("Error reading weekly goals:", error);
+          dropdownContent.parentNode.blur();
+          anchor.blur();
+          mgmt.saveAndRender();
+        }
+      });
+
+      //select entire todo item
+      document
+        .querySelector("todoList")
+        ?.addEventListener("focusin", ({ target }) => {
+          if (target.matches("input")) {
+            target.setSelectionRange(0, target.value.length);
+            target.addEventListener("keydown", function handleKeydown(event) {
+              if (event.key === "Enter") {
+                debugLog("Enter button clicked");
+                const inputs = Array.from(
+                  document.querySelector("todoList").querySelectorAll("input")
+                );
+                const currentIndex = inputs.indexOf(target);
+                // Find the next input in the list, or loop back to the first one
+                const nextInput = inputs[currentIndex + 1] || inputs[0];
+                nextInput.focus(); // Move focus to the next input
+                target.removeEventListener("keydown", handleKeydown);
+              }
+            });
+          }
         });
+
+      document
+        .querySelector(".cardSignal")
+        .addEventListener("change", mgmt.saveAndRender);
+      document
+        .querySelector("[name=braindump]")
+        .addEventListener("focusout", mgmt.saveAndRender);
+
+      const flippers = document.querySelectorAll(".flip");
+      flippers[0].addEventListener("click", () => {
+        mgmt.changeContent(1);
+      });
+      flippers[1].addEventListener("click", () => {
+        mgmt.changeContent(-1);
+      });
+
+      // Attach event listeners on keys
+      document.addEventListener("keydown", (e) => {
+        // Check if the focused element is an input, textarea, or contenteditable
+        const activeElement = document.activeElement;
+        const isInputFocused =
+          activeElement.tagName === "INPUT" ||
+          activeElement.tagName === "TEXTAREA" ||
+          activeElement.isContentEditable;
+        if (!isInputFocused) {
+          if (e.key === "ArrowLeft") {
+            mgmt.changeContent(-1);
+          }
+          if (e.key === "ArrowRight") {
+            mgmt.changeContent(1);
+          }
+        }
+      });
+      debugLog("start mgmt");
+      mgmt.setupTodos();
+      mgmt.init();
+      if (listType == "Today") {
+        const date = new Date();
+        const year = date.getUTCFullYear();
+        const startOfYear = new Date(Date.UTC(year, 0, 1));
+        const daysDifference = Math.floor((date - startOfYear) / 86400000);
+        const week = Math.ceil(
+          (daysDifference + startOfYear.getUTCDay() + 1) / 7
+        );
+        const goalKey = `${year}-${week.toString().padStart(2, "0")}`;
+        getKeyFromStore("weeklyGoals", goalKey)
+          .then((result) => {
+            if (result) {
+              debugLog("Weekly goals retrieved:", result.goalText);
+              document.getElementById("listType").dataset.text = result.goalText;
+            } else {
+              debugLog("No goals found.");
+            }
+          })
+          .catch((error) => {
+            debugError("Error reading weekly goals:", error);
+          });
+      }
+    }
+    
+    // Call initCard if TodoApp is ready, otherwise it will be called by setTimeout
+    if (window.TodoApp && window.TodoApp.cardManager) {
+      initCard();
     }
   })();
 </script>

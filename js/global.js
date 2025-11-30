@@ -1,8 +1,14 @@
-// Debug helper - only log in development
-const DEBUG = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const debugLog = (...args) => { if (DEBUG) console.log(...args); };
-const debugError = (...args) => { if (DEBUG) console.error(...args); };
-const debugWarn = (...args) => { if (DEBUG) console.warn(...args); };
+// Debug helper - use global if available, otherwise create
+if (!window.DEBUG) {
+  window.DEBUG = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  window.debugLog = (...args) => { if (window.DEBUG) console.log(...args); };
+  window.debugError = (...args) => { if (window.DEBUG) console.error(...args); };
+  window.debugWarn = (...args) => { if (window.DEBUG) console.warn(...args); };
+}
+const DEBUG = window.DEBUG;
+const debugLog = window.debugLog;
+const debugError = window.debugError;
+const debugWarn = window.debugWarn;
 
 if (!window.TodoApp || !window.TodoApp.cardManager) {
   class TodoManager {

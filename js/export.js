@@ -13,14 +13,20 @@ function decompressData(compressedData) {
     return JSON.parse(decompressedString);
 }
 
+// Use global debug helpers if available
+if (typeof window !== 'undefined' && !window.DEBUG) {
+  window.DEBUG = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  window.debugLog = (...args) => { if (window.DEBUG) console.log(...args); };
+  window.debugError = (...args) => { if (window.DEBUG) console.error(...args); };
+}
+
 function msg(text) {
     const msgConsole = document.getElementById("msgs");
     if (msgConsole) {
         msgConsole.value += text + '\n';
     }
-    const debug = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    if (debug) {
-        console.log(text);
+    if (window.debugLog) {
+        window.debugLog(text);
     }
 }
 
@@ -114,7 +120,8 @@ async function exportData() {
 }
 
 async function importData(jsonData) {
-    const debug = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const debugLog = window.debugLog || (() => {});
+    const debugError = window.debugError || (() => {});
     
     let data;
     try {
@@ -151,17 +158,13 @@ async function importData(jsonData) {
             // Validate item structure
             const itemValidation = validateItem(newItem, type);
             if (!itemValidation.valid) {
-                if (debug) {
-                    console.error(`Error: ${itemValidation.error} in ${type} item:`, newItem);
-                }
+                debugError(`Error: ${itemValidation.error} in ${type} item:`, newItem);
                 msg(`Error: ${itemValidation.error} in ${type}`);
                 continue;
             }
             
             if (!newItem[identifierKey]) {
-                if (debug) {
-                    console.error(`Error: Missing required key (${identifierKey}) in new ${type} item:`, newItem);
-                }
+                debugError(`Error: Missing required key (${identifierKey}) in new ${type} item:`, newItem);
                 msg(`Error: Missing key (${identifierKey}) in ${type}`);
                 continue;
             }
@@ -175,9 +178,7 @@ async function importData(jsonData) {
                     await saveToStore(type, newItem);
                     msg(`Added: New ${type} entry for ${identifierKey}: ${newItem[identifierKey]}`);
                 } catch (error) {
-                    if (debug) {
-                        console.error(`Failed to save ${type} item:`, newItem, error);
-                    }
+                    debugError(`Failed to save ${type} item:`, newItem, error);
                     msg(`Error saving ${type} entry for ${identifierKey}: ${newItem[identifierKey]}`);
                 }
             }
