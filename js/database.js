@@ -1,32 +1,38 @@
 let db;
+// Debug helper - only log in development
+const DEBUG = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+const debugLog = (...args) => { if (DEBUG) console.log(...args); };
+const debugError = (...args) => { if (DEBUG) console.error(...args); };
+const debugWarn = (...args) => { if (DEBUG) console.warn(...args); };
+
 function checkDatabaseVersion(dbName = "todos") {
-  console.log("get name", dbName);
+  debugLog("get name", dbName);
   const request = indexedDB.open(dbName);
   request.onsuccess = function (event) {
     db = event.target.result;
-    console.log(
+    debugLog(
       `The current version of the '${dbName}' database is: ${db.version}`
     );
     db.close(); // Close the database when done
   };
   request.onupgradeneeded = function (e) {
-    console.log("need upgrade");
+    debugLog("need upgrade");
   };
   request.onerror = function (e) {
-    console.error("Failed to open the database:", e.target.error);
+    debugError("Failed to open the database:", e.target.error);
   };
 }
 //const databaseError = (e) => console.error('IndexedDB Error:', e.target.error);
 const databaseError = (error) => {
   if (error && error.message) {
-    console.error("Database Error:", error.message);
+    debugError("Database Error:", error.message);
   } else {
-    console.error("An unexpected error occurred:", error);
+    debugError("An unexpected error occurred:", error);
   }
 };
 //open db
 const databaseOpen = (callback) => {
-  console.log("starting db");
+  debugLog("starting db");
   // Open a database, specify the name and version
   const version = 26;
   const request = indexedDB.open("todos", version);
@@ -37,28 +43,28 @@ const databaseOpen = (callback) => {
   };
   request.onsuccess = function (e) {
     db = e.target.result;
-    console.log("success");
+    debugLog("success");
     callback(db);
   };
   request.onerror = (e) => {
     databaseError(e);
   };
   request.onblocked = () => {
-    console.warn(
+    debugWarn(
       "Database open request was blocked. Close other tabs with this database open."
     );
   };
 };
 const databaseSchema = (e) => {
-  console.log("Updating database schema...");
-  const db = event.target.result;
-  const tx = event.target.transaction;
+  debugLog("Updating database schema...");
+  const db = e.target.result;
+  const tx = e.target.transaction;
   // Helper to check and create missing indexes
   const ensureIndexes = (store, indexes) => {
     indexes.forEach(({ name, keyPath, options }) => {
       if (!store.indexNames.contains(name)) {
         store.createIndex(name, keyPath, options);
-        console.log(`Index '${name}' created.`);
+        debugLog(`Index '${name}' created.`);
       }
     });
   };
@@ -67,7 +73,7 @@ const databaseSchema = (e) => {
     let store;
     if (!db.objectStoreNames.contains("todo")) {
       store = db.createObjectStore("todo", { keyPath: "date" }); // Composite key
-      console.log("Object store 'todo' created.");
+      debugLog("Object store 'todo' created.");
     } else {
       store = tx.objectStore("todo");
     }
@@ -80,7 +86,7 @@ const databaseSchema = (e) => {
     let store;
     if (!db.objectStoreNames.contains("next")) {
       store = db.createObjectStore("next", { keyPath: "name" });
-      console.log("Object store 'next' created.");
+      debugLog("Object store 'next' created.");
     } else {
       store = tx.objectStore("next");
     }
@@ -99,7 +105,7 @@ const databaseSchema = (e) => {
     let store;
     if (!db.objectStoreNames.contains("someday")) {
       store = db.createObjectStore("someday", { keyPath: "name" });
-      console.log("Object store 'someday' created.");
+      debugLog("Object store 'someday' created.");
     } else {
       store = tx.objectStore("someday");
     }
@@ -117,7 +123,7 @@ const databaseSchema = (e) => {
   {
     if (!db.objectStoreNames.contains("weeklyGoals")) {
       db.createObjectStore("weeklyGoals", { keyPath: "week" }); // 'week' as primary key
-      console.log("Object store 'weeklyGoals' created.");
+      debugLog("Object store 'weeklyGoals' created.");
     }
   }
 };
@@ -129,22 +135,22 @@ function recreateDatabase(databaseName, callback) {
   if (db) db.close(); // Close the existing database connection
   const deleteRequest = indexedDB.deleteDatabase(databaseName);
   deleteRequest.onsuccess = () => {
-    console.log(`Database "${databaseName}" deleted successfully.`);
+    debugLog(`Database "${databaseName}" deleted successfully.`);
     // Reopen and recreate the database
     databaseOpen(databaseName, (newDb) => {
-      console.log(`Database "${databaseName}" opened and schema recreated.`);
+      debugLog(`Database "${databaseName}" opened and schema recreated.`);
       callback(newDb); // Notify the caller that the database has been recreated
     });
   };
   deleteRequest.onerror = (e) => {
-    console.error(
+    debugError(
       `Failed to delete the database "${databaseName}":`,
       e.target.error
     );
     callback(null); // Notify the caller that the deletion failed
   };
   deleteRequest.onblocked = () => {
-    console.warn(
+    debugWarn(
       `Database deletion for "${databaseName}" is blocked. Ensure all tabs are closed.`
     );
   };
@@ -152,44 +158,85 @@ function recreateDatabase(databaseName, callback) {
 
 function getDataByIndex(storeName, indexName, query) {
   return new Promise((resolve, reject) => {
-    const transaction = openTransaction([storeName]);
-    const store = transaction.objectStore(storeName);
-    // Check if the index exists
-    if (!store.indexNames.contains(indexName)) {
-      console.warn(
-        `Index "${indexName}" does not exist in store "${storeName}". Deleting and recreating database.`
-      );
-      // Delete and recreate the database
-      recreateDatabase(db.name, () => {
-        console.log("Database recreated successfully.");
+    try {
+      if (!db) {
+        reject(new Error("Database not initialized"));
+        return;
+      }
+      const transaction = openTransaction([storeName]);
+      if (!transaction) {
+        reject(new Error("Failed to open transaction"));
+        return;
+      }
+      transaction.onerror = (e) => reject(e.target.error);
+      
+      const store = transaction.objectStore(storeName);
+      if (!store) {
+        reject(new Error(`Store "${storeName}" not found`));
+        return;
+      }
+      
+      // Check if the index exists
+      if (!store.indexNames.contains(indexName)) {
+        const debug = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        if (debug) {
+          console.warn(
+            `Index "${indexName}" does not exist in store "${storeName}". This may require a database update.`
+          );
+        }
+        // Don't automatically recreate - let the upgrade handler deal with it
         reject(
           new Error(
-            `Index "${indexName}" was missing. Database has been recreated.`
+            `Index "${indexName}" is missing. Please refresh the page to update the database.`
           )
         );
-      });
-      return; // Exit early since the database is being recreated
+        return;
+      }
+      const index = store.index(indexName);
+      const request = index.getAll(query);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    } catch (error) {
+      reject(error);
     }
-    const index = store.index(indexName);
-    const request = index.getAll(query);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
   });
 }
 function getAllFromStore(storeName, indexName = null, query = null) {
   return new Promise((resolve, reject) => {
-    const transaction = openTransaction([storeName]);
-    const store = transaction.objectStore(storeName);
+    try {
+      if (!db) {
+        reject(new Error("Database not initialized"));
+        return;
+      }
+      const transaction = openTransaction([storeName]);
+      if (!transaction) {
+        reject(new Error("Failed to open transaction"));
+        return;
+      }
+      transaction.onerror = (e) => reject(e.target.error);
+      
+      const store = transaction.objectStore(storeName);
+      if (!store) {
+        reject(new Error(`Store "${storeName}" not found`));
+        return;
+      }
 
-    // Use the specified index or the object store itself
-    const source = indexName ? store.index(indexName) : store;
+      // Use the specified index or the object store itself
+      const source = indexName ? store.index(indexName) : store;
+      if (!source) {
+        reject(new Error(`Index "${indexName}" not found in store "${storeName}"`));
+        return;
+      }
 
-    // Create a key range if a query is provided
-    const request =
-      query !== null ? source.getAll(IDBKeyRange.only(query)) : source.getAll();
+      // Create a key range if a query is provided
+      const request =
+        query !== null ? source.getAll(IDBKeyRange.only(query)) : source.getAll();
 
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    } catch (error) {
+      reject(error);
+    }
   });
 }
 function getLastRow(storeName) {
@@ -250,11 +297,32 @@ function getKeysFromStore(storeName) {
 // Save data to a specific store
 function saveToStore(storeName, data) {
   return new Promise((resolve, reject) => {
-    const transaction = openTransaction([storeName], "readwrite");
-    const store = transaction.objectStore(storeName);
-    const request = store.put(data);
-    transaction.oncomplete = () => resolve();
-    transaction.onerror = (event) => reject(event.target.error);
-    request.onerror = (event) => reject(event.target.error);
+    try {
+      if (!db) {
+        reject(new Error("Database not initialized"));
+        return;
+      }
+      if (!data) {
+        reject(new Error("No data provided to save"));
+        return;
+      }
+      const transaction = openTransaction([storeName], "readwrite");
+      if (!transaction) {
+        reject(new Error("Failed to open transaction"));
+        return;
+      }
+      transaction.onerror = (e) => reject(e.target.error);
+      
+      const store = transaction.objectStore(storeName);
+      if (!store) {
+        reject(new Error(`Store "${storeName}" not found`));
+        return;
+      }
+      const request = store.put(data);
+      request.onsuccess = () => resolve();
+      request.onerror = (event) => reject(event.target.error);
+    } catch (error) {
+      reject(error);
+    }
   });
 }

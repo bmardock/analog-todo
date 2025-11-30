@@ -59,32 +59,52 @@
         webrtc: "templates/webrtc.html",
       };
       async function loadScripts(scripts) {
+        const debug = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
         for (const script of scripts) {
           await new Promise((resolve, reject) => {
             const newScript = document.createElement("script");
             if (script.src) {
-              const debug = true;
               const cacheBust = debug ? `?cacheBust=${Date.now()}` : "";
               newScript.src = script.src + cacheBust;
               newScript.async = false; // Maintain execution order
               newScript.onload = () => {
-                console.log("script loaded", script.src);
+                if (debug) {
+                  console.log("script loaded", script.src);
+                }
                 resolve();
               };
-              newScript.onerror = reject;
+              newScript.onerror = (error) => {
+                if (debug) {
+                  console.error("Failed to load script:", script.src, error);
+                }
+                // Continue even if script fails to load
+                resolve();
+              };
             } else {
-              newScript.textContent = script.textContent;
-              resolve();
-              console.log("script loaded", "inline");
+              try {
+                newScript.textContent = script.textContent;
+                if (debug) {
+                  console.log("script loaded", "inline");
+                }
+                resolve();
+              } catch (error) {
+                if (debug) {
+                  console.error("Failed to execute inline script:", error);
+                }
+                resolve(); // Continue even if inline script fails
+              }
             }
             document.body.appendChild(newScript);
           });
         }
       }
 
-      async function loadRoute() {
+      async function loadRoute(retries = 2) {
         const route = (location.hash = location.hash || "#todo").slice(1);
-        console.log("route", route);
+        const debug = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        if (debug) {
+          console.log("route", route);
+        }
         const templatePath = routes[route];
         const content = document.getElementById("content");
         document.body.className = route === "todo" ? "today" : route;
@@ -111,10 +131,27 @@
               .forEach((script) => script.remove());
             content.innerHTML = tempDiv.innerHTML;
             await loadScripts(uniqueScripts);
-            console.log("All scripts loaded in sequence");
+            if (debug) {
+              console.log("All scripts loaded in sequence");
+            }
           } catch (error) {
-            console.error("Error loading route:", error);
-            content.innerHTML = `<p>Error: ${error.message}</p>`;
+            if (debug) {
+              console.error("Error loading route:", error);
+            }
+            // Retry logic
+            if (retries > 0) {
+              await new Promise((resolve) => setTimeout(resolve, 500));
+              return loadRoute(retries - 1);
+            }
+            // Fallback UI
+            content.innerHTML = `
+              <div style="padding: 20px; text-align: center;">
+                <p>Error loading page: ${error.message}</p>
+                <button onclick="window.location.reload()" style="padding: 10px 20px; margin-top: 10px; cursor: pointer;">
+                  Reload Page
+                </button>
+              </div>
+            `;
           }
         } else {
           content.innerHTML = "<p>Page not found</p>";
@@ -135,11 +172,76 @@
           window.dispatchEvent(new Event("hashchange"));
         }
       }
+      // Register Service Worker
+      if ("serviceWorker" in navigator) {
+        let registration;
+        navigator.serviceWorker
+          .register("./service-worker.js", { scope: "./" })
+          .then((reg) => {
+            registration = reg;
+            // Check for updates
+            reg.addEventListener("updatefound", () => {
+              const newWorker = reg.installing;
+              if (newWorker) {
+                newWorker.addEventListener("statechange", () => {
+                  if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+                    // New service worker available
+                    showUpdateNotification(reg);
+                  }
+                });
+              }
+            });
+          })
+          .catch((error) => {
+            const debug = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            if (debug) {
+              console.error("Service Worker registration failed:", error);
+            }
+          });
+
+        // Listen for service worker updates
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener("controllerchange", () => {
+          if (!refreshing) {
+            refreshing = true;
+            window.location.reload();
+          }
+        });
+      }
+
+      function showUpdateNotification(registration) {
+        const updateButton = document.createElement("button");
+        updateButton.textContent = "Update Available - Click to Refresh";
+        updateButton.style.cssText = `
+          position: fixed;
+          top: 10px;
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 10000;
+          padding: 10px 20px;
+          background: #000;
+          color: #fff;
+          border: none;
+          border-radius: 5px;
+          cursor: pointer;
+          font-size: 14px;
+        `;
+        updateButton.onclick = () => {
+          if (registration.waiting) {
+            registration.waiting.postMessage({ type: "SKIP_WAITING" });
+          }
+        };
+        document.body.appendChild(updateButton);
+      }
+
       // Initialize app
       databaseOpen(async () => {
         //show info if user is new
         getKeysFromStore("todo").then(async (todos) => {
-          console.log("todos", todos);
+          const debug = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+          if (debug) {
+            console.log("todos", todos);
+          }
           if (todos.length === 0) {
             window.location.hash = "info";
           }

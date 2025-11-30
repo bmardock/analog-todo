@@ -85,7 +85,11 @@
 <script src="./js/global.js"></script>
 <script>
   (function () {
-    console.log("set mgmt");
+    const DEBUG = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const debugLog = (...args) => { if (DEBUG) console.log(...args); };
+    const debugError = (...args) => { if (DEBUG) console.error(...args); };
+    
+    debugLog("set mgmt");
     const mgmt = window.TodoApp.cardManager;
 
     let hash = location.hash.slice(1) || "today";
@@ -102,7 +106,7 @@
       document.querySelector(".picker").value = urlParams.get("date") || today;
       document.querySelector(".picker").name = "date";
       document.querySelector(".picker").type = "date";
-      console.log("picker", document.querySelector(".picker").value);
+      debugLog("picker", document.querySelector(".picker").value);
       placeholderTxt = "mm/dd/yyyy";
 
       document.querySelector(".calendar").addEventListener("click", (e) => {
@@ -132,7 +136,7 @@
               .forEach((el) => el.classList.remove("on"));
             let name = target.getAttribute("data-text");
             if (name == "Add New") {
-              console.log("show new list");
+              debugLog("show new list");
               name = "";
               document.querySelector(".picker").readonly = false;
             }
@@ -156,26 +160,26 @@
       .querySelector(".picker")
       .addEventListener("change", async ({ target }) => {
         if (target.name == "name") {
-          console.log("Original Value:", target.value);
+          debugLog("Original Value:", target.value);
           try {
             // Get the unique card name asynchronously
             const uniqueName = await mgmt.getUniqueCardName(target.value);
-            console.log("Unique Name:", uniqueName);
+            debugLog("Unique Name:", uniqueName);
             // Update the input field with the unique name
             //target.value = uniqueName;
             document.querySelector(".picker").value = uniqueName;
-            console.log("NAME", target.value);
+            debugLog("NAME", target.value);
             return;
           } catch (error) {
-            console.error("Error generating unique card name:", error);
+            debugError("Error generating unique card name:", error);
           }
         } else {
-          console.log("picker change fetch and render");
+          debugLog("picker change fetch and render");
           mgmt.fetchAndRender();
         }
       });
-    console.log("set picker");
-    console.log(placeholderTxt);
+    debugLog("set picker");
+    debugLog(placeholderTxt);
     document.querySelector(".picker").placeholder = placeholderTxt;
 
     //todoList change
@@ -191,10 +195,10 @@
           // Trigger renderCalList after copyTaskToList is completed
           mgmt.renderCalList();
         } catch (error) {
-          console.error("Error while copying task or rendering list:", error);
+          debugError("Error while copying task or rendering list:", error);
         }
       } else {
-        console.log("Change detected");
+        debugLog("Change detected");
         mgmt.saveAndRender();
       }
     });
@@ -203,7 +207,7 @@
       const anchor = e.target.closest("a");
       const dropdownContent = e.target.closest(".dropdown-content");
       if (anchor && dropdownContent) {
-        console.log("dropdown select");
+        debugLog("dropdown select");
         const selection = anchor.textContent.trim();
         const button = dropdownContent.parentNode.querySelector("button");
         if (button) {
@@ -224,7 +228,7 @@
           target.setSelectionRange(0, target.value.length);
           target.addEventListener("keydown", function handleKeydown(event) {
             if (event.key === "Enter") {
-              console.log("Enter button clicked");
+              debugLog("Enter button clicked");
               const inputs = Array.from(
                 document.querySelector("todoList").querySelectorAll("input")
               );
@@ -270,7 +274,7 @@
         }
       }
     });
-    console.log("start mgmt");
+    debugLog("start mgmt");
     mgmt.setupTodos();
     mgmt.init();
     if (listType == "Today") {
@@ -285,14 +289,14 @@
       getKeyFromStore("weeklyGoals", goalKey)
         .then((result) => {
           if (result) {
-            console.log("Weekly goals retrieved:", result.goalText);
+            debugLog("Weekly goals retrieved:", result.goalText);
             document.getElementById("listType").dataset.text = result.goalText;
           } else {
-            console.log("No goals found.");
+            debugLog("No goals found.");
           }
         })
         .catch((error) => {
-          console.error("Error reading weekly goals:", error);
+          debugError("Error reading weekly goals:", error);
         });
     }
   })();

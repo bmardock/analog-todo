@@ -15,8 +15,87 @@ function decompressData(compressedData) {
 
 function msg(text) {
     const msgConsole = document.getElementById("msgs");
-    msgConsole.value += text + '\n';
-    console.log(text);
+    if (msgConsole) {
+        msgConsole.value += text + '\n';
+    }
+    const debug = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (debug) {
+        console.log(text);
+    }
+}
+
+// Sanitize text input to prevent XSS
+function sanitizeInput(text) {
+    if (typeof text !== 'string') return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Validate imported data structure
+function validateDataStructure(data) {
+    if (!data || typeof data !== 'object') {
+        return { valid: false, error: 'Invalid data format: must be an object' };
+    }
+    
+    const MAX_DATA_SIZE = 10 * 1024 * 1024; // 10MB limit
+    const dataSize = JSON.stringify(data).length;
+    if (dataSize > MAX_DATA_SIZE) {
+        return { valid: false, error: `Data too large: ${(dataSize / 1024 / 1024).toFixed(2)}MB (max 10MB)` };
+    }
+    
+    const validTypes = ['todo', 'next', 'someday', 'weeklyGoals'];
+    for (const key in data) {
+        if (!validTypes.includes(key)) {
+            return { valid: false, error: `Invalid data type: ${key}` };
+        }
+        if (!Array.isArray(data[key])) {
+            return { valid: false, error: `Data type ${key} must be an array` };
+        }
+    }
+    
+    return { valid: true };
+}
+
+// Validate item structure
+function validateItem(item, type) {
+    const requiredKeys = {
+        todo: ['date'],
+        next: ['name'],
+        someday: ['name'],
+        weeklyGoals: ['week']
+    };
+    
+    const required = requiredKeys[type] || [];
+    for (const key of required) {
+        if (!(key in item) || item[key] === null || item[key] === undefined) {
+            return { valid: false, error: `Missing required field: ${key}` };
+        }
+    }
+    
+    // Validate data types
+    if (type === 'todo' && item.date && typeof item.date !== 'string') {
+        return { valid: false, error: 'Date must be a string' };
+    }
+    if ((type === 'next' || type === 'someday') && item.name && typeof item.name !== 'string') {
+        return { valid: false, error: 'Name must be a string' };
+    }
+    if (type === 'weeklyGoals' && item.week && typeof item.week !== 'string') {
+        return { valid: false, error: 'Week must be a string' };
+    }
+    
+    // Sanitize text fields
+    if (item.text && typeof item.text === 'string') {
+        item.text = sanitizeInput(item.text).substring(0, 1000); // Limit length
+    }
+    if (item.braindump && typeof item.braindump === 'string') {
+        item.braindump = sanitizeInput(item.braindump).substring(0, 10000); // Limit length
+    }
+    if (item.goalText && typeof item.goalText === 'string') {
+        item.goalText = sanitizeInput(item.goalText).substring(0, 2000); // Limit length
+    }
+    
+    return { valid: true };
 }
 
 async function exportData() {
@@ -35,10 +114,31 @@ async function exportData() {
 }
 
 async function importData(jsonData) {
-    const data = JSON.parse(jsonData);
+    const debug = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    
+    let data;
+    try {
+        data = JSON.parse(jsonData);
+    } catch (error) {
+        msg(`Error: Invalid JSON format - ${error.message}`);
+        throw new Error('Invalid JSON format');
+    }
+    
+    // Validate overall data structure
+    const structureValidation = validateDataStructure(data);
+    if (!structureValidation.valid) {
+        msg(`Error: ${structureValidation.error}`);
+        throw new Error(structureValidation.error);
+    }
+    
     const promises = [];
 
     const mergeAndSave = async (type, newData) => {
+        if (!Array.isArray(newData)) {
+            msg(`Error: ${type} data must be an array`);
+            return;
+        }
+        
         const existingData = await getAllFromStore(type) || [];
         const identifierKey = {
             todo: 'date',
@@ -48,10 +148,22 @@ async function importData(jsonData) {
         }[type];
 
         for (const newItem of newData) {
+            // Validate item structure
+            const itemValidation = validateItem(newItem, type);
+            if (!itemValidation.valid) {
+                if (debug) {
+                    console.error(`Error: ${itemValidation.error} in ${type} item:`, newItem);
+                }
+                msg(`Error: ${itemValidation.error} in ${type}`);
+                continue;
+            }
+            
             if (!newItem[identifierKey]) {
-                console.error(`Error: Missing required key (${identifierKey}) in new ${type} item:`, newItem);
+                if (debug) {
+                    console.error(`Error: Missing required key (${identifierKey}) in new ${type} item:`, newItem);
+                }
                 msg(`Error: Missing key (${identifierKey}) in ${type}`);
-                continue; // Skip items without the required key
+                continue;
             }
 
             const isDuplicate = existingData.some(existingItem => existingItem[identifierKey] === newItem[identifierKey]);
@@ -60,10 +172,12 @@ async function importData(jsonData) {
                 msg(`Skipped: Duplicate ${type} entry for ${identifierKey}: ${newItem[identifierKey]}`);
             } else {
                 try {
-                    await saveToStore(type, newItem); // Save individual item
+                    await saveToStore(type, newItem);
                     msg(`Added: New ${type} entry for ${identifierKey}: ${newItem[identifierKey]}`);
                 } catch (error) {
-                    console.error(`Failed to save ${type} item:`, newItem, error);
+                    if (debug) {
+                        console.error(`Failed to save ${type} item:`, newItem, error);
+                    }
                     msg(`Error saving ${type} entry for ${identifierKey}: ${newItem[identifierKey]}`);
                 }
             }

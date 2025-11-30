@@ -1,3 +1,8 @@
+// Debug helper - only log in development
+const DEBUG = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const debugLog = (...args) => { if (DEBUG) console.log(...args); };
+const debugError = (...args) => { if (DEBUG) console.error(...args); };
+
     const renderCalendar = (date = new Date()) => {
         const today = new Date();
         const month = date.getMonth();
@@ -5,7 +10,7 @@
         const preDay = new Date(year, month, 1).getDay();
         const endMonth = new Date(year, month + 1, 0).getDate();
 
-        console.log('render cal:', year, month);
+        debugLog('render cal:', year, month);
         const calendarHTML = Array.from({ length: 42 }, (_, i) => {
             const day = new Date(year, month, i + 1 - preDay);
             const dayNumber = day.getDate().toString().padStart(2, '0');
@@ -20,7 +25,7 @@
     };
 
     const renderEvents = (eventDetails) => {
-        console.log('render events:', eventDetails);
+        debugLog('render events:', eventDetails);
         eventDetails.forEach(({ date, cardSignal, braindump }) => {
             const dayElement = document.getElementById(date);
 
@@ -72,13 +77,13 @@
         try {
             const result = await getAllFromStore('weeklyGoals'); // Await the data
             if (result.length > 0) {
-                console.log("Weekly goals retrieved:", result);
+                debugLog("Weekly goals retrieved:", result);
             } else {
-                console.log("No goals found.");
+                debugLog("No goals found.");
             }
             return result; // Return the resolved result
         } catch (error) {
-            console.error("Error reading weekly goals:", error);
+            debugError("Error reading weekly goals:", error);
             return []; // Return an empty array on error
         }
     };
@@ -96,7 +101,7 @@
         //const today = new Date();
         //const week = getWeekIdentifier(today);
         if (!week || !goalText) {
-            console.error('Week and goalText must be provided.');
+            debugError('Week and goalText must be provided.');
             return;
         }
         const goalData = {
@@ -107,31 +112,31 @@
         };
         saveToStore('weeklyGoals', goalData)
         .then(() => {
-            console.log("Weekly goal saved successfully!");
+            debugLog("Weekly goal saved successfully!");
             if (typeof callback === 'function') {
                 callback();
             }
         })
         .catch((error) => {
-            console.error("Error saving goal:", error);
+            debugError("Error saving goal:", error);
         });
     }
     function readWeeklyGoal(callback) {
         getAllFromStore('weeklyGoals')
         .then((result) => {
             if (result.length > 0) {
-                console.log("Weekly goals retrieved:", result);
+                debugLog("Weekly goals retrieved:", result);
                 if (callback) callback(result);
             } else {
-                console.log("No goals found.");
+                debugLog("No goals found.");
             }
         })
         .catch((error) => {
-            console.error("Error reading weekly goals:", error);
+            debugError("Error reading weekly goals:", error);
         });
     }
     function renderGoals(result) {
-        console.log(result);
+        debugLog(result);
 
         // Get the last item from the result array
         const lastItem = result?.at(-1);
