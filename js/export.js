@@ -120,8 +120,10 @@ async function exportData() {
 }
 
 async function importData(jsonData) {
-    const debugLog = window.debugLog || (() => {});
-    const debugError = window.debugError || (() => {});
+    // Use window debug functions directly to avoid redeclaration errors
+    // Use unified logger from database.js
+    const debugLog = window.log || (() => {});
+    const debugError = window.error || (() => {});
     
     let data;
     try {

@@ -1,12 +1,5 @@
-// Debug helper - use global if available
-if (!window.DEBUG) {
-  window.DEBUG = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  window.debugLog = (...args) => { if (window.DEBUG) console.log(...args); };
-  window.debugError = (...args) => { if (window.DEBUG) console.error(...args); };
-}
-const DEBUG = window.DEBUG;
-const debugLog = window.debugLog;
-const debugError = window.debugError;
+// Logger is initialized in database.js which loads first
+// Just use window.log, window.error, window.warn directly
 
     const renderCalendar = (date = new Date()) => {
         const today = new Date();
@@ -15,7 +8,7 @@ const debugError = window.debugError;
         const preDay = new Date(year, month, 1).getDay();
         const endMonth = new Date(year, month + 1, 0).getDate();
 
-        debugLog('render cal:', year, month);
+        window.log('render cal:', year, month);
         const calendarHTML = Array.from({ length: 42 }, (_, i) => {
             const day = new Date(year, month, i + 1 - preDay);
             const dayNumber = day.getDate().toString().padStart(2, '0');
@@ -30,7 +23,7 @@ const debugError = window.debugError;
     };
 
     const renderEvents = (eventDetails) => {
-        debugLog('render events:', eventDetails);
+        window.log('render events:', eventDetails);
         eventDetails.forEach(({ date, cardSignal, braindump }) => {
             const dayElement = document.getElementById(date);
 
@@ -83,13 +76,13 @@ const debugError = window.debugError;
         try {
             const result = await getAllFromStore('weeklyGoals'); // Await the data
             if (result.length > 0) {
-                debugLog("Weekly goals retrieved:", result);
+                window.log("Weekly goals retrieved:", result);
             } else {
-                debugLog("No goals found.");
+                window.log("No goals found.");
             }
             return result; // Return the resolved result
         } catch (error) {
-            debugError("Error reading weekly goals:", error);
+            window.error("Error reading weekly goals:", error);
             return []; // Return an empty array on error
         }
     };
@@ -107,7 +100,7 @@ const debugError = window.debugError;
         //const today = new Date();
         //const week = getWeekIdentifier(today);
         if (!week || !goalText) {
-            debugError('Week and goalText must be provided.');
+            window.error('Week and goalText must be provided.');
             return;
         }
         const goalData = {
@@ -118,31 +111,31 @@ const debugError = window.debugError;
         };
         saveToStore('weeklyGoals', goalData)
         .then(() => {
-            debugLog("Weekly goal saved successfully!");
+            window.log("Weekly goal saved successfully!");
             if (typeof callback === 'function') {
                 callback();
             }
         })
         .catch((error) => {
-            debugError("Error saving goal:", error);
+            window.error("Error saving goal:", error);
         });
     }
     function readWeeklyGoal(callback) {
         getAllFromStore('weeklyGoals')
         .then((result) => {
             if (result.length > 0) {
-                debugLog("Weekly goals retrieved:", result);
+                window.log("Weekly goals retrieved:", result);
                 if (callback) callback(result);
             } else {
-                debugLog("No goals found.");
+                window.log("No goals found.");
             }
         })
         .catch((error) => {
-            debugError("Error reading weekly goals:", error);
+            window.error("Error reading weekly goals:", error);
         });
     }
     function renderGoals(result) {
-        debugLog(result);
+        window.log(result);
 
         // Get the last item from the result array
         const lastItem = result?.at(-1);

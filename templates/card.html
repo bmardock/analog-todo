@@ -85,26 +85,20 @@
 <script src="./js/global.js"></script>
 <script>
   (function () {
-    // Use global debug helpers if available
-    if (!window.DEBUG) {
-      window.DEBUG = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      window.debugLog = (...args) => { if (window.DEBUG) console.log(...args); };
-      window.debugError = (...args) => { if (window.DEBUG) console.error(...args); };
-    }
-    const debugLog = window.debugLog;
-    const debugError = window.debugError;
+    // Logger is initialized in database.js which loads first
+    // Just use window.log, window.error, window.warn directly
     
-    debugLog("set mgmt");
+    window.log("set mgmt");
     
     // Wait for TodoApp to be initialized
     if (!window.TodoApp || !window.TodoApp.cardManager) {
-      debugError("TodoApp.cardManager not initialized yet");
+      window.error("TodoApp.cardManager not initialized yet");
       // Try again after a short delay
       setTimeout(() => {
         if (window.TodoApp && window.TodoApp.cardManager) {
           initCard();
         } else {
-          debugError("TodoApp.cardManager still not available");
+          window.error("TodoApp.cardManager still not available");
         }
       }, 100);
       return;
@@ -129,7 +123,7 @@
         document.querySelector(".picker").value = urlParams.get("date") || today;
         document.querySelector(".picker").name = "date";
         document.querySelector(".picker").type = "date";
-        debugLog("picker", document.querySelector(".picker").value);
+        window.log("picker", document.querySelector(".picker").value);
         placeholderTxt = "mm/dd/yyyy";
 
         document.querySelector(".calendar").addEventListener("click", (e) => {
@@ -159,7 +153,7 @@
                 .forEach((el) => el.classList.remove("on"));
               let name = target.getAttribute("data-text");
               if (name == "Add New") {
-                debugLog("show new list");
+                window.log("show new list");
                 name = "";
                 document.querySelector(".picker").readonly = false;
               }
@@ -183,26 +177,26 @@
         .querySelector(".picker")
         .addEventListener("change", async ({ target }) => {
           if (target.name == "name") {
-            debugLog("Original Value:", target.value);
+            window.log("Original Value:", target.value);
             try {
               // Get the unique card name asynchronously
               const uniqueName = await mgmt.getUniqueCardName(target.value);
-              debugLog("Unique Name:", uniqueName);
+              window.log("Unique Name:", uniqueName);
               // Update the input field with the unique name
               //target.value = uniqueName;
               document.querySelector(".picker").value = uniqueName;
-              debugLog("NAME", target.value);
+              window.log("NAME", target.value);
               return;
             } catch (error) {
-              debugError("Error generating unique card name:", error);
+              window.error("Error generating unique card name:", error);
             }
           } else {
-            debugLog("picker change fetch and render");
+            window.log("picker change fetch and render");
             mgmt.fetchAndRender();
           }
         });
-      debugLog("set picker");
-      debugLog(placeholderTxt);
+      window.log("set picker");
+      window.log(placeholderTxt);
       document.querySelector(".picker").placeholder = placeholderTxt;
 
       //todoList change
@@ -218,10 +212,10 @@
             // Trigger renderCalList after copyTaskToList is completed
             mgmt.renderCalList();
           } catch (error) {
-            debugError("Error while copying task or rendering list:", error);
+            window.error("Error while copying task or rendering list:", error);
           }
         } else {
-          debugLog("Change detected");
+          window.log("Change detected");
           mgmt.saveAndRender();
         }
       });
@@ -230,7 +224,7 @@
         const anchor = e.target.closest("a");
         const dropdownContent = e.target.closest(".dropdown-content");
         if (anchor && dropdownContent) {
-          debugLog("dropdown select");
+          window.log("dropdown select");
           const selection = anchor.textContent.trim();
           const button = dropdownContent.parentNode.querySelector("button");
           if (button) {
@@ -251,7 +245,7 @@
             target.setSelectionRange(0, target.value.length);
             target.addEventListener("keydown", function handleKeydown(event) {
               if (event.key === "Enter") {
-                debugLog("Enter button clicked");
+                window.log("Enter button clicked");
                 const inputs = Array.from(
                   document.querySelector("todoList").querySelectorAll("input")
                 );
@@ -297,7 +291,7 @@
           }
         }
       });
-      debugLog("start mgmt");
+      window.log("start mgmt");
       mgmt.setupTodos();
       mgmt.init();
       if (listType == "Today") {
@@ -312,14 +306,14 @@
         getKeyFromStore("weeklyGoals", goalKey)
           .then((result) => {
             if (result) {
-              debugLog("Weekly goals retrieved:", result.goalText);
+              window.log("Weekly goals retrieved:", result.goalText);
               document.getElementById("listType").dataset.text = result.goalText;
             } else {
-              debugLog("No goals found.");
+              window.log("No goals found.");
             }
           })
           .catch((error) => {
-            debugError("Error reading weekly goals:", error);
+            window.error("Error reading weekly goals:", error);
           });
       }
     }

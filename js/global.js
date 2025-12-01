@@ -1,14 +1,5 @@
-// Debug helper - use global if available, otherwise create
-if (!window.DEBUG) {
-  window.DEBUG = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  window.debugLog = (...args) => { if (window.DEBUG) console.log(...args); };
-  window.debugError = (...args) => { if (window.DEBUG) console.error(...args); };
-  window.debugWarn = (...args) => { if (window.DEBUG) console.warn(...args); };
-}
-const DEBUG = window.DEBUG;
-const debugLog = window.debugLog;
-const debugError = window.debugError;
-const debugWarn = window.debugWarn;
+// Logger is initialized in database.js which loads first
+// Just use window.log, window.error, window.warn directly
 
 if (!window.TodoApp || !window.TodoApp.cardManager) {
   class TodoManager {
@@ -44,7 +35,7 @@ if (!window.TodoApp || !window.TodoApp.cardManager) {
     // Fetch list data based on archive status and populate a container
     async fetchListData(archivedStatus, containerSelector) {
       const container = document.querySelector(containerSelector);
-      debugLog("fetchListData", "archive:", archivedStatus, this.storeName);
+      window.log("fetchListData", "archive:", archivedStatus, this.storeName);
       try {
         const rows = await getAllFromStore(
           this.storeName,
@@ -62,7 +53,7 @@ if (!window.TodoApp || !window.TodoApp.cardManager) {
         }
         container.parentNode.classList.toggle("empty", rows.length < 1);
       } catch (error) {
-        debugError(`Error fetching rows for ${containerSelector}:`, error);
+        window.error(`Error fetching rows for ${containerSelector}:`, error);
       }
     }
 
@@ -146,7 +137,7 @@ if (!window.TodoApp || !window.TodoApp.cardManager) {
     renderCalList = () => {
       const dateInput = document.querySelector(".picker");
       getKeysFromStore(this.storeName).then((todos) => {
-        debugLog("todos", todos);
+        window.log("todos", todos);
         const eventDates = new Set();
         todos.forEach(([type, date]) => {
           if (date) {
@@ -189,9 +180,9 @@ if (!window.TodoApp || !window.TodoApp.cardManager) {
 
     // Save and render
     saveAndRender = () => {
-      debugLog("Saving todo and re-rendering");
+      window.log("Saving todo and re-rendering");
       const data = this.getDataFromDOM();
-      debugLog(data);
+      window.log(data);
       this.saveList(data, () => {
         this.fetchAndRender();
       });
@@ -199,15 +190,15 @@ if (!window.TodoApp || !window.TodoApp.cardManager) {
 
     // Fetch and render
     fetchAndRender = () => {
-      debugLog("Fetching and rendering todos");
+      window.log("Fetching and rendering todos");
       const key = document.querySelector(".picker").name;
       const value = document.querySelector(".picker").value;
       this.reconstructUrl(key, value);
       if (this.storeName == "todo") {
-        debugLog("rerender Cal list");
+        window.log("rerender Cal list");
         this.renderCalList();
       } else {
-        debugLog("rerender Recent list");
+        window.log("rerender Recent list");
         this.recentList();
       }
       this.fetchCard(key, value, this.renderCard.bind(this));
@@ -215,7 +206,7 @@ if (!window.TodoApp || !window.TodoApp.cardManager) {
 
     // Save list
     async saveList(data, callback) {
-      debugLog("Saving altered data", this.storeName, data);
+      window.log("Saving altered data", this.storeName, data);
       data.lastUpdated = new Date();
 
       if (data.name !== "") {
@@ -223,7 +214,7 @@ if (!window.TodoApp || !window.TodoApp.cardManager) {
           await saveToStore(this.storeName, data);
           callback();
         } catch (error) {
-          debugError("Error saving data:", error.message);
+          window.error("Error saving data:", error.message);
         }
       } else {
         alert("Set Name first");
@@ -232,12 +223,12 @@ if (!window.TodoApp || !window.TodoApp.cardManager) {
 
     // Fetch card
     async fetchCard(key, value, callback) {
-      debugLog("Fetching List:", key, value);
+      window.log("Fetching List:", key, value);
       try {
         const data = await getDataByIndex(this.storeName, key, value);
         callback(data);
       } catch (error) {
-        debugError("Error fetching todos by index:", error.message);
+        window.error("Error fetching todos by index:", error.message);
       }
     }
 
@@ -267,7 +258,7 @@ if (!window.TodoApp || !window.TodoApp.cardManager) {
         }
         return null;
       } catch (error) {
-        debugError("Error fetching the last row:", error);
+        window.error("Error fetching the last row:", error);
       }
     }
     async copyTaskToList(copyTo, signal, text) {
@@ -309,7 +300,7 @@ if (!window.TodoApp || !window.TodoApp.cardManager) {
       if (data.todos.length < 10) {
         data.todos.push({ signal, text });
         await saveToStore(storeName, data);
-        debugLog("Data saved successfully:", data);
+        window.log("Data saved successfully:", data);
       } else {
         alert("Todo list is full, cannot add more items.");
       }
@@ -327,7 +318,7 @@ if (!window.TodoApp || !window.TodoApp.cardManager) {
         this.fetchAndRender();
       } else if (this.storeName == "next" || this.storeName == "someday") {
         //otherwise get last row
-        debugLog("No name in URL. Fetching most recent card.");
+        window.log("No name in URL. Fetching most recent card.");
         const lastRow = await this.getLastRow(this.storeName);
         if (lastRow) {
           this.renderCard([lastRow]);

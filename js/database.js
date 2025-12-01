@@ -1,44 +1,51 @@
 let db;
-// Debug helper - only log in development (declare once globally)
+// Unified logger - initialize once globally, used by all modules
+// This file loads first, so we set up the logger here
 if (typeof window !== 'undefined' && !window.DEBUG) {
   window.DEBUG = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  window.debugLog = (...args) => { if (window.DEBUG) console.log(...args); };
-  window.debugError = (...args) => { if (window.DEBUG) console.error(...args); };
-  window.debugWarn = (...args) => { if (window.DEBUG) console.warn(...args); };
 }
-const DEBUG = window.DEBUG;
-const debugLog = window.debugLog;
-const debugError = window.debugError;
-const debugWarn = window.debugWarn;
+// Create unified logger functions that check DEBUG internally
+// Store on window to persist across script reloads and avoid redeclaration errors
+if (!window.log) {
+  window.log = (...args) => {
+    if (window.DEBUG) console.log(...args);
+  };
+  window.error = (...args) => {
+    if (window.DEBUG) console.error(...args);
+  };
+  window.warn = (...args) => {
+    if (window.DEBUG) console.warn(...args);
+  };
+}
 
 function checkDatabaseVersion(dbName = "todos") {
-  debugLog("get name", dbName);
+  window.log("get name", dbName);
   const request = indexedDB.open(dbName);
   request.onsuccess = function (event) {
     db = event.target.result;
-    debugLog(
+    window.log(
       `The current version of the '${dbName}' database is: ${db.version}`
     );
     db.close(); // Close the database when done
   };
   request.onupgradeneeded = function (e) {
-    debugLog("need upgrade");
+    window.log("need upgrade");
   };
   request.onerror = function (e) {
-    debugError("Failed to open the database:", e.target.error);
+    window.error("Failed to open the database:", e.target.error);
   };
 }
 //const databaseError = (e) => console.error('IndexedDB Error:', e.target.error);
 const databaseError = (error) => {
   if (error && error.message) {
-    debugError("Database Error:", error.message);
+    window.error("Database Error:", error.message);
   } else {
-    debugError("An unexpected error occurred:", error);
+    window.error("An unexpected error occurred:", error);
   }
 };
 //open db
 const databaseOpen = (callback) => {
-  debugLog("starting db");
+  window.log("starting db");
   // Open a database, specify the name and version
   const version = 26;
   const request = indexedDB.open("todos", version);
@@ -49,20 +56,20 @@ const databaseOpen = (callback) => {
   };
   request.onsuccess = function (e) {
     db = e.target.result;
-    debugLog("success");
+    window.log("success");
     callback(db);
   };
   request.onerror = (e) => {
     databaseError(e);
   };
   request.onblocked = () => {
-    debugWarn(
+    window.warn(
       "Database open request was blocked. Close other tabs with this database open."
     );
   };
 };
 const databaseSchema = (e) => {
-  debugLog("Updating database schema...");
+  window.log("Updating database schema...");
   const db = e.target.result;
   const tx = e.target.transaction;
   // Helper to check and create missing indexes
@@ -70,7 +77,7 @@ const databaseSchema = (e) => {
     indexes.forEach(({ name, keyPath, options }) => {
       if (!store.indexNames.contains(name)) {
         store.createIndex(name, keyPath, options);
-        debugLog(`Index '${name}' created.`);
+        window.log(`Index '${name}' created.`);
       }
     });
   };
@@ -79,7 +86,7 @@ const databaseSchema = (e) => {
     let store;
     if (!db.objectStoreNames.contains("todo")) {
       store = db.createObjectStore("todo", { keyPath: "date" }); // Composite key
-      debugLog("Object store 'todo' created.");
+      window.log("Object store 'todo' created.");
     } else {
       store = tx.objectStore("todo");
     }
@@ -92,7 +99,7 @@ const databaseSchema = (e) => {
     let store;
     if (!db.objectStoreNames.contains("next")) {
       store = db.createObjectStore("next", { keyPath: "name" });
-      debugLog("Object store 'next' created.");
+      window.log("Object store 'next' created.");
     } else {
       store = tx.objectStore("next");
     }
@@ -111,7 +118,7 @@ const databaseSchema = (e) => {
     let store;
     if (!db.objectStoreNames.contains("someday")) {
       store = db.createObjectStore("someday", { keyPath: "name" });
-      debugLog("Object store 'someday' created.");
+      window.log("Object store 'someday' created.");
     } else {
       store = tx.objectStore("someday");
     }
@@ -129,7 +136,7 @@ const databaseSchema = (e) => {
   {
     if (!db.objectStoreNames.contains("weeklyGoals")) {
       db.createObjectStore("weeklyGoals", { keyPath: "week" }); // 'week' as primary key
-      debugLog("Object store 'weeklyGoals' created.");
+      window.log("Object store 'weeklyGoals' created.");
     }
   }
 };
@@ -141,22 +148,22 @@ function recreateDatabase(databaseName, callback) {
   if (db) db.close(); // Close the existing database connection
   const deleteRequest = indexedDB.deleteDatabase(databaseName);
   deleteRequest.onsuccess = () => {
-    debugLog(`Database "${databaseName}" deleted successfully.`);
+    window.log(`Database "${databaseName}" deleted successfully.`);
     // Reopen and recreate the database
     databaseOpen(databaseName, (newDb) => {
-      debugLog(`Database "${databaseName}" opened and schema recreated.`);
+      window.log(`Database "${databaseName}" opened and schema recreated.`);
       callback(newDb); // Notify the caller that the database has been recreated
     });
   };
   deleteRequest.onerror = (e) => {
-    debugError(
+    window.error(
       `Failed to delete the database "${databaseName}":`,
       e.target.error
     );
     callback(null); // Notify the caller that the deletion failed
   };
   deleteRequest.onblocked = () => {
-    debugWarn(
+    window.warn(
       `Database deletion for "${databaseName}" is blocked. Ensure all tabs are closed.`
     );
   };

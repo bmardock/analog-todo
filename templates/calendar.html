@@ -35,11 +35,16 @@
 <script src="./js/calendar.js"></script>
 <script>
   (async function () {
+    // Wait for getWeeklyGoals to be available
+    while (typeof window.getWeeklyGoals !== 'function') {
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+    
     const goalsContainer = document.querySelector("#goals");
     const goalTextArea = document.querySelector("[name=goal]");
     const weekIdInput = document.querySelector("[name=weekId]");
     const weekDateSpan = document.getElementById("weekDate");
-    let weekGoals = await getWeeklyGoals();
+    let weekGoals = await window.getWeeklyGoals();
 
     const urlParams = new URLSearchParams(window.location.search);
     const monthParam =
@@ -80,7 +85,7 @@
       const weekId = weekIdInput.value;
       console.log("Saving goal for week:", weekId, "with text:", goalText);
       saveWeeklyGoal(weekId, goalText, null, null, readWeeklyGoal);
-      weekGoals = await getWeeklyGoals();
+      weekGoals = await window.getWeeklyGoals();
     });
 
     async function loadCalendar() {
