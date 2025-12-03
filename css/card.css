@@ -46,6 +46,11 @@ header input.picker::-webkit-calendar-picker-indicator {
 header input.picker:read-only {
   border-bottom: 1px solid rgba(0, 0, 0, 0.3);
 }
+header input.picker[type="date"] {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.3);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
 .cardSignal {
   display: flex;
   flex-direction: column;
@@ -120,10 +125,18 @@ todoItem input {
 }
 @media screen and (max-width: 450px) {
   todoItem input {
-    margin: 10px 0 0 25px;
+    margin: 6px 0 0 25px;
+    line-height: 26px;
   }
   todoList {
-    padding: 5px 0;
+    padding: 0;
+  }
+  card .flip {
+    margin: 2px auto;
+  }
+  cal {
+    margin-top: 3px;
+    padding: 3px 5px;
   }
 }
 todoItem select {
@@ -255,6 +268,7 @@ todoitem:focus-within input {
 
 card {
   display: none;
+  position: relative;
 }
 card.active {
   display: flex;
@@ -264,9 +278,10 @@ card.active {
 }
 
 card .flip {
-  position: absolute;
-  left: 46%;
-  margin: 0 auto;
+  position: relative;
+  left: auto;
+  right: auto;
+  margin: 5px auto;
   line-height: 12px;
   color: #999;
   display: block;
@@ -289,9 +304,13 @@ card .flip {
   padding: 2px 8px;
   z-index: 99;
   opacity: 0.5;
+  flex-shrink: 0;
 }
 
 card.back {
+  display: none;
+}
+card.back.active {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -318,13 +337,17 @@ textarea[name="braindump"] {
   min-height: 0;
 }
 
+card .flip {
+  order: 1;
+}
 cal {
   display: none;
   justify-content: space-between;
-  padding: 10px;
+  padding: 5px 10px;
   align-items: flex-start;
-  margin-top: 30px;
+  margin-top: 10px;
   flex-shrink: 0;
+  order: 2;
 }
 body.today cal {
   display: flex;

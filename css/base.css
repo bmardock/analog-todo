@@ -197,6 +197,7 @@ header {
   position: relative;
   display: flex;
   justify-content: space-between;
+  flex-shrink: 0;
 }
 
 footer {
@@ -293,6 +294,10 @@ body.someday footer li.someday a {
   }
   body.someday {
     background: #d2c1a9;
+  }
+  body #content {
+    margin: 5px 0;
+    padding: 0 10px;
   }
 }
 
