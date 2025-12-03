@@ -1,6 +1,7 @@
 const { test, expect } = require('@playwright/test');
 const { waitForRoute } = require('./helpers');
 
+test.describe('Next Page Functionality', () => {
   test.beforeEach(async ({ page }) => {
     await waitForRoute(page, '/#next');
   });
