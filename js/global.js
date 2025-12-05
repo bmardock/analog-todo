@@ -1,10 +1,59 @@
 // Logger is initialized in database.js which loads first
 // Just use window.log, window.error, window.warn directly
 
+// Simple debounce utility
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+// Simple message display utility (replaces alert)
+function showMessage(message, type = 'error') {
+  const messageEl = document.getElementById('app-message') || (() => {
+    const el = document.createElement('div');
+    el.id = 'app-message';
+    el.style.cssText = `
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 12px 24px;
+      background: ${type === 'error' ? '#f44336' : '#4caf50'};
+      color: white;
+      border-radius: 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      z-index: 10000;
+      max-width: 90%;
+      text-align: center;
+      font-size: 14px;
+    `;
+    document.body.appendChild(el);
+    return el;
+  })();
+  
+  messageEl.textContent = message;
+  messageEl.style.display = 'block';
+  
+  setTimeout(() => {
+    messageEl.style.display = 'none';
+  }, 3000);
+}
+
+// Make showMessage available globally for use in other scripts
+window.showMessage = showMessage;
+
 if (!window.TodoApp || !window.TodoApp.cardManager) {
   class TodoManager {
     constructor() {
       this.storeName = "";
+      this.isSaving = false;
       //this.init();
     }
 
@@ -178,15 +227,19 @@ if (!window.TodoApp || !window.TodoApp.cardManager) {
       </div>`;
     };
 
-    // Save and render
-    saveAndRender = () => {
+    // Save and render (with debouncing and race condition prevention)
+    saveAndRender = debounce(() => {
+      if (this.isSaving) {
+        window.log("Save already in progress, skipping");
+        return;
+      }
       window.log("Saving todo and re-rendering");
       const data = this.getDataFromDOM();
       window.log(data);
       this.saveList(data, () => {
         this.fetchAndRender();
       });
-    };
+    }, 300);
 
     // Fetch and render
     fetchAndRender = () => {
@@ -206,18 +259,28 @@ if (!window.TodoApp || !window.TodoApp.cardManager) {
 
     // Save list
     async saveList(data, callback) {
+      if (this.isSaving) {
+        window.log("Save already in progress");
+        return;
+      }
+      
+      this.isSaving = true;
       window.log("Saving altered data", this.storeName, data);
       data.lastUpdated = new Date();
 
       if (data.name !== "") {
         try {
           await saveToStore(this.storeName, data);
+          this.isSaving = false;
           callback();
         } catch (error) {
+          this.isSaving = false;
           window.error("Error saving data:", error.message);
+          showMessage("Error saving data. Please try again.", 'error');
         }
       } else {
-        alert("Set Name first");
+        this.isSaving = false;
+        showMessage("Please set a name first", 'error');
       }
     }
 
@@ -275,14 +338,14 @@ if (!window.TodoApp || !window.TodoApp.cardManager) {
       };
       const { storeName, value } = storeMap[copyTo] || {};
       if (!storeName) {
-        alert("Invalid destination list specified.");
+        showMessage("Invalid destination list specified.", 'error');
         return;
       }
       let data;
       if (copyTo === "next" || copyTo === "someday") {
         // Get the last row for "next" or "someday"
         if (!(data = await this.getLastRow(storeName))) {
-          alert("No list available in the target store.");
+          showMessage("No list available in the target store.", 'error');
           return;
         }
       } else {
@@ -302,7 +365,7 @@ if (!window.TodoApp || !window.TodoApp.cardManager) {
         await saveToStore(storeName, data);
         window.log("Data saved successfully:", data);
       } else {
-        alert("Todo list is full, cannot add more items.");
+        showMessage("Todo list is full, cannot add more items.", 'error');
       }
     }
     // Initialize the manager

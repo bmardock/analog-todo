@@ -56,7 +56,11 @@
     const timeDifference = targetDate - now;
 
     if (timeDifference < 0) {
-      alert("Selected time is in the past.");
+      if (window.showMessage) {
+        window.showMessage("Selected time is in the past.", 'error');
+      } else {
+        alert("Selected time is in the past.");
+      }
       return;
     }
 
@@ -69,7 +73,11 @@
       console.log(`Reminder set for ${targetDate}`);
       //document.querySelector('.status').appendChild(`<p>Reminder set for ${targetDate}</p>`);
     } else {
-      alert("Service Worker not available.");
+      if (window.showMessage) {
+        window.showMessage("Service Worker not available.", 'error');
+      } else {
+        alert("Service Worker not available.");
+      }
     }
   }
 
@@ -91,7 +99,11 @@
       })();
 
     if (!reminderText || !reminderDate || !reminderTime) {
-      alert("Please fill out all fields.");
+      if (window.showMessage) {
+        window.showMessage("Please fill out all fields.", 'error');
+      } else {
+        alert("Please fill out all fields.");
+      }
       return;
     }
     const targetDateString = `${reminderDate}T${reminderTime}`;

@@ -185,7 +185,11 @@
       displayMessage(`You: ${message}`, "secondDevice");
     } else {
       console.error("❌ Data channel is not open.");
-      alert("Connection not established yet.");
+      if (window.showMessage) {
+        window.showMessage("Connection not established yet.", 'error');
+      } else {
+        alert("Connection not established yet.");
+      }
     }
   };
 

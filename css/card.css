@@ -107,6 +107,7 @@ todoList {
   overflow-x: hidden;
   min-height: 0;
   max-height: 100%;
+  order: 0;
 }
 todoItem {
   display: block;
@@ -396,6 +397,7 @@ cal .day span {
 
 .archive-button {
   display: none;
+  order: 5;
 }
 .archive-button.on {
   display: block;
@@ -538,12 +540,14 @@ label.archive:hover {
 .recent {
   margin-top: 20px;
   flex-shrink: 0;
+  order: 3;
 }
 .archive.empty {
   display: none;
 }
 .archive {
   flex-shrink: 0;
+  order: 4;
 }
 .recent h2,
 .archive h2 {

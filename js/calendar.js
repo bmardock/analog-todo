@@ -159,7 +159,11 @@ function generateICS () {
 
   // Check if inputs are provided
   if (!startTime || !reviewTime) {
-    alert("Please enter both start and review times.");
+    if (window.showMessage) {
+      window.showMessage("Please enter both start and review times.", 'error');
+    } else {
+      alert("Please enter both start and review times.");
+    }
     return;
   }
 

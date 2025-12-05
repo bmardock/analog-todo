@@ -97,7 +97,11 @@
       // Handle image load failure
       img.onerror = function () {
         console.error("Failed to load the JAB Code image.");
-        alert("Error: The generated image is in an unsupported format.");
+        if (window.showMessage) {
+          window.showMessage("Error: The generated image is in an unsupported format.", 'error');
+        } else {
+          alert("Error: The generated image is in an unsupported format.");
+        }
       };
     });
   });
@@ -147,7 +151,11 @@
       };
       reader.readAsDataURL(file);
     } else {
-      alert("Please upload a valid image file.");
+      if (window.showMessage) {
+        window.showMessage("Please upload a valid image file.", 'error');
+      } else {
+        alert("Please upload a valid image file.");
+      }
     }
   });
 

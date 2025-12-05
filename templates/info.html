@@ -76,10 +76,18 @@
         // Reload page
         window.location.reload();
       } catch (error) {
-        alert("Error clearing cache. Please try again.");
+        if (window.showMessage) {
+          window.showMessage("Error clearing cache. Please try again.", 'error');
+        } else {
+          alert("Error clearing cache. Please try again.");
+        }
       }
     } else {
-      alert("Cache clearing not supported in this browser.");
+      if (window.showMessage) {
+        window.showMessage("Cache clearing not supported in this browser.", 'error');
+      } else {
+        alert("Cache clearing not supported in this browser.");
+      }
     }
   });
 </script>
