@@ -132,8 +132,10 @@ self.addEventListener('message', (event) => {
           })
         );
       }).then(() => {
-        // Send confirmation back
-        event.ports[0].postMessage({ success: true });
+        // Send confirmation back if port exists
+        if (event.ports && event.ports[0]) {
+          event.ports[0].postMessage({ success: true });
+        }
       })
     );
   }

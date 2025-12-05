@@ -102,10 +102,11 @@ header i {
 }
 todoList {
   padding: 10px 0;
-  flex: 1;
+  flex: 1 1 auto;
   overflow-y: auto;
   overflow-x: hidden;
   min-height: 0;
+  max-height: 100%;
 }
 todoItem {
   display: block;
@@ -275,13 +276,14 @@ card.active {
   flex-direction: column;
   height: 100%;
   overflow: hidden;
+  min-height: 0;
 }
 
 card .flip {
   position: relative;
   left: auto;
   right: auto;
-  margin: 5px auto;
+  margin: 2px auto;
   line-height: 12px;
   color: #999;
   display: block;
@@ -298,8 +300,8 @@ card .flip {
   background-size: 25px 25px;
   border: 0;
   cursor: pointer;
-  width: 35px;
-  height: 35px;
+  width: 25px;
+  height: 25px;
   border-radius: 50%;
   padding: 2px 8px;
   z-index: 99;
@@ -345,7 +347,7 @@ cal {
   justify-content: space-between;
   padding: 5px 10px;
   align-items: flex-start;
-  margin-top: 10px;
+  margin-top: 2px;
   flex-shrink: 0;
   order: 2;
 }
