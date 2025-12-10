@@ -20,7 +20,19 @@
     const chatBox = document.getElementById("chatBox");
     const chatForm = document.getElementById("chatForm");
     const messageInput = document.getElementById("message");
-    let thread_id = localStorage.getItem("thread_id");
+    let thread_id = null;
+    
+    // Load thread_id from IndexedDB
+    getAppSetting("thread_id").then(id => {
+      thread_id = id;
+      if (thread_id) {
+        console.log("thread_id", thread_id);
+        document.querySelector("#thread_id").innerHTML = `thread: ${thread_id}`;
+        getChatHistory(thread_id);
+      }
+    }).catch(error => {
+      window.error("Error loading thread_id:", error);
+    });
 
     const getChatHistory = async (thread_id) => {
       const loadingIndicator = document.createElement("div");
@@ -71,19 +83,13 @@
       }
     };
 
-    //if thread_id is set
-    if (thread_id) {
-      console.log("thread_id", thread_id);
-      document.querySelector("#thread_id").innerHTML = `thread: ${thread_id}`;
-      getChatHistory(thread_id);
-    }
-
     chatForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const userMessage = messageInput.value.trim();
       if (!userMessage) return;
 
-      thread_id = localStorage.getItem("thread_id");
+      // Get thread_id from IndexedDB
+      thread_id = await getAppSetting("thread_id");
 
       // Display user's message
       const userMessageDiv = document.createElement("div");
@@ -125,12 +131,13 @@
         }
         const parsedMessage = JSON.parse(assistantMessage);
 
-        // Store the thread_id in localStorage
+        // Store the thread_id in IndexedDB
         if (!thread_id && parsedMessage.thread_id) {
+          thread_id = parsedMessage.thread_id;
           document.querySelector(
             "#thread_id"
-          ).innerHTML = `thread: ${parsedMessage.thread_id}`;
-          localStorage.setItem("thread_id", parsedMessage.thread_id);
+          ).innerHTML = `thread: ${thread_id}`;
+          setAppSetting("thread_id", thread_id);
         }
         if (parsedMessage.data) {
           if (Array.isArray(parsedMessage.data)) {

@@ -47,7 +47,7 @@ const databaseError = (error) => {
 const databaseOpen = (callback) => {
   window.log("starting db");
   // Open a database, specify the name and version
-  const version = 26;
+  const version = 27; // Increment version to trigger migration for appSettings store
   const request = indexedDB.open("todos", version);
   // Run migrations if necessary
   request.onupgradeneeded = (e) => {
@@ -57,7 +57,10 @@ const databaseOpen = (callback) => {
   request.onsuccess = function (e) {
     db = e.target.result;
     window.log("success");
-    callback(db);
+    // Migrate localStorage values to IndexedDB after database is ready
+    migrateLocalStorageToIndexedDB().then(() => {
+      callback(db);
+    });
   };
   request.onerror = (e) => {
     databaseError(e);
@@ -137,6 +140,13 @@ const databaseSchema = (e) => {
     if (!db.objectStoreNames.contains("weeklyGoals")) {
       db.createObjectStore("weeklyGoals", { keyPath: "week" }); // 'week' as primary key
       window.log("Object store 'weeklyGoals' created.");
+    }
+  }
+  // 'appSettings' store
+  {
+    if (!db.objectStoreNames.contains("appSettings")) {
+      db.createObjectStore("appSettings", { keyPath: "key" });
+      window.log("Object store 'appSettings' created.");
     }
   }
 };
@@ -337,5 +347,100 @@ function saveToStore(storeName, data) {
     } catch (error) {
       reject(error);
     }
+  });
+}
+
+// Get app setting from IndexedDB
+function getAppSetting(key) {
+  return new Promise((resolve, reject) => {
+    try {
+      if (!db) {
+        reject(new Error("Database not initialized"));
+        return;
+      }
+      const transaction = openTransaction(["appSettings"]);
+      if (!transaction) {
+        reject(new Error("Failed to open transaction"));
+        return;
+      }
+      transaction.onerror = (e) => reject(e.target.error);
+      
+      const store = transaction.objectStore("appSettings");
+      if (!store) {
+        reject(new Error("Store 'appSettings' not found"));
+        return;
+      }
+      const request = store.get(key);
+      request.onsuccess = () => {
+        const result = request.result;
+        resolve(result ? result.value : null);
+      };
+      request.onerror = () => reject(request.error);
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+// Set app setting in IndexedDB
+function setAppSetting(key, value) {
+  return new Promise((resolve, reject) => {
+    try {
+      if (!db) {
+        reject(new Error("Database not initialized"));
+        return;
+      }
+      const transaction = openTransaction(["appSettings"], "readwrite");
+      if (!transaction) {
+        reject(new Error("Failed to open transaction"));
+        return;
+      }
+      transaction.onerror = (e) => reject(e.target.error);
+      
+      const store = transaction.objectStore("appSettings");
+      if (!store) {
+        reject(new Error("Store 'appSettings' not found"));
+        return;
+      }
+      const request = store.put({ key, value });
+      request.onsuccess = () => resolve();
+      request.onerror = (event) => reject(event.target.error);
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+// Migrate localStorage values to IndexedDB (run once on app load)
+function migrateLocalStorageToIndexedDB() {
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      resolve(); // Database not ready yet, skip migration
+      return;
+    }
+    
+    const keysToMigrate = ['connect_id', 'thread_id'];
+    const migrationPromises = keysToMigrate.map(key => {
+      const value = localStorage.getItem(key);
+      if (value) {
+        return getAppSetting(key).then(storedValue => {
+          // Only migrate if not already in IndexedDB
+          if (storedValue === null) {
+            return setAppSetting(key, value).then(() => {
+              window.log(`Migrated ${key} from localStorage to IndexedDB`);
+              localStorage.removeItem(key); // Remove from localStorage after migration
+            });
+          }
+        });
+      }
+      return Promise.resolve();
+    });
+    
+    Promise.all(migrationPromises)
+      .then(() => resolve())
+      .catch(error => {
+        window.error("Error during localStorage migration:", error);
+        resolve(); // Don't fail app if migration fails
+      });
   });
 }

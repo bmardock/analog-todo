@@ -99,12 +99,39 @@
         }
       }
 
+      // Global cleanup registry for route cleanup
+      window.routeCleanup = window.routeCleanup || {
+        handlers: [],
+        register: function(cleanupFn) {
+          this.handlers.push(cleanupFn);
+          // Return unregister function
+          return () => {
+            const index = this.handlers.indexOf(cleanupFn);
+            if (index > -1) this.handlers.splice(index, 1);
+          };
+        },
+        execute: function() {
+          this.handlers.forEach(fn => {
+            try {
+              fn();
+            } catch (e) {
+              console.error("Error in cleanup handler:", e);
+            }
+          });
+          this.handlers = [];
+        }
+      };
+
       async function loadRoute(retries = 2) {
         const route = (location.hash = location.hash || "#todo").slice(1);
         const debug = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
         if (debug) {
           console.log("route", route);
         }
+        
+        // Execute cleanup handlers before loading new route
+        window.routeCleanup.execute();
+        
         const templatePath = routes[route];
         const content = document.getElementById("content");
         document.body.className = route === "todo" ? "today" : route;

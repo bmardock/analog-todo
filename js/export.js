@@ -119,6 +119,12 @@ async function exportData() {
     });
 }
 
+// Make functions available globally
+if (typeof window !== 'undefined') {
+    window.exportData = exportData;
+    window.importData = importData;
+}
+
 async function importData(jsonData) {
     // Use window debug functions directly to avoid redeclaration errors
     // Use unified logger from database.js
@@ -171,11 +177,31 @@ async function importData(jsonData) {
                 continue;
             }
 
-            const isDuplicate = existingData.some(existingItem => existingItem[identifierKey] === newItem[identifierKey]);
+            const existingItem = existingData.find(item => item[identifierKey] === newItem[identifierKey]);
 
-            if (isDuplicate) {
-                msg(`Skipped: Duplicate ${type} entry for ${identifierKey}: ${newItem[identifierKey]}`);
+            if (existingItem) {
+                // Conflict resolution: compare timestamps
+                const existingTime = existingItem.lastUpdated ? new Date(existingItem.lastUpdated).getTime() : 0;
+                const newTime = newItem.lastUpdated ? new Date(newItem.lastUpdated).getTime() : 0;
+                
+                if (newTime > existingTime) {
+                    // Newer version wins - replace existing
+                    try {
+                        await saveToStore(type, newItem);
+                        msg(`Updated: ${type} entry for ${identifierKey}: ${newItem[identifierKey]} (newer version)`);
+                    } catch (error) {
+                        debugError(`Failed to update ${type} item:`, newItem, error);
+                        msg(`Error updating ${type} entry for ${identifierKey}: ${newItem[identifierKey]}`);
+                    }
+                } else if (newTime === existingTime) {
+                    // Same timestamp - skip (already have this version)
+                    msg(`Skipped: Duplicate ${type} entry for ${identifierKey}: ${newItem[identifierKey]} (same version)`);
+                } else {
+                    // Existing is newer - keep existing
+                    msg(`Skipped: ${type} entry for ${identifierKey}: ${newItem[identifierKey]} (existing is newer)`);
+                }
             } else {
+                // New item - add it
                 try {
                     await saveToStore(type, newItem);
                     msg(`Added: New ${type} entry for ${identifierKey}: ${newItem[identifierKey]}`);
