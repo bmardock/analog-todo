@@ -48,6 +48,7 @@
     let dataChannel = null;
     let isInitiator = false;
     let webrtcConnected = false;
+    let offerCreationTimeout = null;
     generateButton.addEventListener("click", () => {
       const randomCode = `${Math.floor(100 + Math.random() * 900)}-${Math.floor(
         100 + Math.random() * 900
@@ -127,17 +128,29 @@
               count - 1 === 1 ? "" : "s"
             }.<br>Establishing peer connection...`;
             // Start WebRTC connection process when both devices are connected
-            if (count === 2 && !webrtcConnected && !peerConnection) {
-              // Simple approach: random delay to determine initiator
-              // First device to act becomes initiator, other becomes responder
-              const delay = Math.random() * 500 + 100; // 100-600ms random delay
-              setTimeout(() => {
-                // Only create offer if we haven't received one yet
-                if (!peerConnection && !webrtcConnected) {
+            if (count === 2 && !webrtcConnected && !peerConnection && !offerCreationTimeout) {
+              // Use socket ID as tiebreaker for deterministic initiator selection
+              // Device with "smaller" socket ID becomes initiator
+              const socketId = socket.id;
+              const delay = Math.random() * 800 + 200; // 200-1000ms random delay
+              
+              // Add a small deterministic component based on socket ID
+              const idHash = socketId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+              const deterministicDelay = (idHash % 500); // 0-500ms based on socket ID
+              const totalDelay = delay + deterministicDelay;
+              
+              console.log(`Scheduling offer creation in ${totalDelay.toFixed(0)}ms (socket ID: ${socketId.substring(0, 8)}...)`);
+              offerCreationTimeout = setTimeout(() => {
+                // Only create offer if we still haven't received one
+                if (!peerConnection && !webrtcConnected && !isInitiator) {
                   isInitiator = true;
+                  console.log("This device is the initiator (creating offer)");
                   createWebRTCOffer();
+                } else {
+                  console.log("Skipping offer creation - already have connection or received offer");
                 }
-              }, delay);
+                offerCreationTimeout = null;
+              }, totalDelay);
             }
           } else {
             statusMessage.innerHTML = "Waiting for another device to connect…";
@@ -148,52 +161,103 @@
           }
         });
 
-        // WebRTC signaling events - using a wrapper object to work with existing server
-        // Note: Server must support broadcasting custom events in the namespace
-        socket.on("webrtc-signal", async (signalData) => {
-          if (webrtcConnected) return; // Ignore if already connected
+        // Handle both WebRTC signaling and regular sync via the existing 'sync' event
+        // WebRTC signals are wrapped in { _webrtcSignal: {...} } format
+        // Regular sync data is compressed/encoded as before
+        // The server already broadcasts 'sync' events, so this works without server changes
+        socket.on("sync", async (data) => {
+          if (webrtcConnected) {
+            // If already connected via WebRTC, ignore sync events (they're for fallback)
+            return;
+          }
 
           try {
-            if (signalData && signalData.type === "offer" && !isInitiator) {
+            // Check if this is a WebRTC signal (wrapped in special format) or regular sync data
+            let signalData = null;
+            try {
+              // Try to parse as WebRTC signal wrapper
+              const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+              if (parsed && parsed._webrtcSignal) {
+                signalData = parsed._webrtcSignal;
+                console.log("Received WebRTC signal via sync:", signalData?.type, "from:", signalData?.fromSocketId || "unknown");
+              }
+            } catch (e) {
+              // Not a WebRTC signal, treat as regular sync data (fallback)
+              msg("sync request (fallback)");
+              const jsonData = decompressData(decodeURIComponent(data));
+          msg("Decompressed JSON Data:");
+          console.log(jsonData);
+          importData(jsonData).then(() => {
+            msg("Import completed!");
+          });
+              return;
+            }
+
+            // Handle WebRTC signal
+            if (!signalData) return;
+
+            if (signalData.type === "offer") {
+              // If we receive an offer, we're definitely the responder (regardless of current state)
+              msg("Received WebRTC offer");
+              // Cancel any pending offer creation
+              if (offerCreationTimeout) {
+                console.log("Cancelling pending offer creation - received offer from other device");
+                clearTimeout(offerCreationTimeout);
+                offerCreationTimeout = null;
+              }
+              if (peerConnection) {
+                console.log("Already have peer connection, closing it to accept new offer");
+                peerConnection.close();
+                peerConnection = null;
+              }
+              // Mark as responder
+              isInitiator = false;
               await handleWebRTCOffer(signalData.offer);
-            } else if (
-              signalData &&
-              signalData.type === "answer" &&
-              isInitiator
-            ) {
-              await handleWebRTCAnswer(signalData.answer);
-            } else if (signalData && signalData.type === "ice-candidate") {
-              if (peerConnection && peerConnection.remoteDescription) {
+            } else if (signalData.type === "answer") {
+              // Only handle answer if we're the initiator (we sent an offer)
+              // If we received an offer first, we're the responder and should ignore answers
+              if (isInitiator && peerConnection && peerConnection.localDescription && peerConnection.localDescription.type === "offer") {
+                msg("Received WebRTC answer");
+                await handleWebRTCAnswer(signalData.answer);
+              } else {
+                console.log("Ignoring answer - we're the responder, not the initiator");
+              }
+            } else if (signalData.type === "ice-candidate") {
+              iceCandidatesReceived++;
+              msg(`Received ICE candidate ${iceCandidatesReceived}`);
+              console.log(`Received ICE candidate ${iceCandidatesReceived}:`, signalData.candidate);
+              if (peerConnection) {
                 try {
-                  await peerConnection.addIceCandidate(
-                    new RTCIceCandidate(signalData.candidate)
-                  );
+                  if (peerConnection.remoteDescription) {
+                    await peerConnection.addIceCandidate(
+                      new RTCIceCandidate(signalData.candidate)
+                    );
+                  } else {
+                    // Store candidate for later if remote description isn't set yet
+                    console.log("Storing ICE candidate until remote description is set");
+                    // The candidate will be added when remote description is set
+                  }
                 } catch (error) {
+                  console.error("Error adding ICE candidate:", error);
                   window.error("Error adding ICE candidate:", error);
                 }
+              } else {
+                console.log("Peer connection not created yet");
               }
+            } else {
+              console.log("Ignored signal:", signalData?.type, "isInitiator:", isInitiator);
             }
           } catch (error) {
-            window.error("Error handling WebRTC signal:", error);
-          }
-        });
-
-        // Fallback: old sync method via Socket.io (if WebRTC fails)
-        socket.on("sync", (compressedData) => {
-          if (!webrtcConnected) {
-            msg("sync request (fallback)");
-            const jsonData = decompressData(decodeURIComponent(compressedData));
-            msg("Decompressed JSON Data:");
-            console.log(jsonData);
-            importData(jsonData).then(() => {
-              msg("Import completed!");
-            });
+            console.error("Error handling sync/signal:", error);
+            window.error("Error handling sync/signal:", error);
           }
         });
       }
     });
-    // WebRTC functions
-    let webrtcTimeout = null;
+      // WebRTC functions
+      let webrtcTimeout = null;
+      let iceCandidatesReceived = 0;
+      let iceCandidatesSent = 0;
 
     function createWebRTCOffer() {
       msg("Creating WebRTC offer...");
@@ -203,19 +267,27 @@
         iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
       });
 
-      // Create data channel
-      dataChannel = peerConnection.createDataChannel("sync", { ordered: true });
-      setupDataChannel(dataChannel);
+        // Create data channel
+        dataChannel = peerConnection.createDataChannel("sync", { ordered: true });
+        setupDataChannel(dataChannel);
 
-      // Handle ICE candidates
-      peerConnection.onicecandidate = (event) => {
-        if (event.candidate) {
-          socket.emit("webrtc-signal", {
-            type: "ice-candidate",
-            candidate: event.candidate,
-          });
-        }
-      };
+        // Handle ICE candidates
+        peerConnection.onicecandidate = (event) => {
+          if (event.candidate) {
+            iceCandidatesSent++;
+            console.log(`Sending ICE candidate ${iceCandidatesSent}:`, event.candidate);
+            // Send WebRTC signal via sync event (wrapped in special format)
+            socket.emit("sync", JSON.stringify({
+              _webrtcSignal: {
+                type: "ice-candidate",
+                candidate: event.candidate,
+                fromSocketId: socket.id,
+              }
+            }));
+          } else {
+            console.log("ICE candidate gathering complete");
+          }
+        };
 
       peerConnection.onconnectionstatechange = () => {
         window.log("WebRTC connection state:", peerConnection.connectionState);
@@ -235,15 +307,16 @@
         }
       };
 
-      // Set timeout for WebRTC connection (10 seconds)
+      // Set timeout for WebRTC connection (15 seconds - increased for slower networks)
       webrtcTimeout = setTimeout(() => {
         if (!webrtcConnected) {
           msg("WebRTC connection timeout, falling back to Socket.io");
+          console.log("WebRTC timeout - connection state:", peerConnection?.connectionState);
           statusMessage.innerHTML =
             "Connection timeout. Using fallback method.";
           fallbackToSocketIOSync();
         }
-      }, 10000);
+      }, 15000);
 
       // Create and send offer
       peerConnection
@@ -252,11 +325,16 @@
           return peerConnection.setLocalDescription(offer);
         })
         .then(() => {
-          socket.emit("webrtc-signal", {
+        // Send WebRTC offer via sync event (wrapped in special format)
+        socket.emit("sync", JSON.stringify({
+          _webrtcSignal: {
             type: "offer",
             offer: peerConnection.localDescription,
-          });
-          msg("WebRTC offer sent");
+            fromSocketId: socket.id,
+          }
+        }));
+        msg("WebRTC offer sent");
+        console.log("WebRTC offer sent via sync (socket ID:", socket.id, "):", peerConnection.localDescription);
         })
         .catch((error) => {
           window.error("Error creating WebRTC offer:", error);
@@ -297,10 +375,14 @@
       // Handle ICE candidates
       peerConnection.onicecandidate = (event) => {
         if (event.candidate) {
+          iceCandidatesSent++;
+          console.log(`Sending ICE candidate ${iceCandidatesSent}:`, event.candidate);
           socket.emit("webrtc-signal", {
             type: "ice-candidate",
             candidate: event.candidate,
           });
+        } else {
+          console.log("ICE candidate gathering complete");
         }
       };
 
@@ -328,11 +410,16 @@
         );
         const answer = await peerConnection.createAnswer();
         await peerConnection.setLocalDescription(answer);
-        socket.emit("webrtc-signal", {
-          type: "answer",
-          answer: peerConnection.localDescription,
-        });
+        // Send WebRTC answer via sync event (wrapped in special format)
+        socket.emit("sync", JSON.stringify({
+          _webrtcSignal: {
+            type: "answer",
+            answer: peerConnection.localDescription,
+            fromSocketId: socket.id,
+          }
+        }));
         msg("WebRTC answer sent");
+        console.log("WebRTC answer sent via sync (socket ID:", socket.id, "):", peerConnection.localDescription);
       } catch (error) {
         window.error("Error handling WebRTC offer:", error);
         msg("Error handling offer, using fallback");
@@ -418,11 +505,11 @@
         performBidirectionalSync(dataChannel);
       } else {
         msg("sending export (fallback)");
-        exportData().then((jsonData) => {
-          const compressedData = compressData(jsonData);
-          const encodedData = encodeURIComponent(compressedData);
-          socket.emit("sync", encodedData);
-        });
+      exportData().then((jsonData) => {
+        const compressedData = compressData(jsonData);
+        const encodedData = encodeURIComponent(compressedData);
+        socket.emit("sync", encodedData);
+      });
       }
     });
 
@@ -464,6 +551,12 @@
     // Cleanup function to disconnect socket and close WebRTC connections
     function cleanup() {
       console.log("Cleaning up socket and WebRTC connections...");
+
+      // Cancel any pending offer creation
+      if (offerCreationTimeout) {
+        clearTimeout(offerCreationTimeout);
+        offerCreationTimeout = null;
+      }
 
       // Close WebRTC data channel
       if (dataChannel) {
@@ -510,17 +603,17 @@
     // Load connect_id from IndexedDB and auto-connect
     getAppSetting("connect_id")
       .then((connect_id) => {
-        if (connect_id) {
-          console.log("connect_id set:", connect_id);
-          codeInput.value = connect_id;
-          const isValidCode = /^\d{3}-\d{3}$/.test(codeInput.value);
-          if (isValidCode) {
-            container.classList.toggle("validCode", isValidCode);
+    if (connect_id) {
+      console.log("connect_id set:", connect_id);
+      codeInput.value = connect_id;
+      const isValidCode = /^\d{3}-\d{3}$/.test(codeInput.value);
+      if (isValidCode) {
+        container.classList.toggle("validCode", isValidCode);
             // Only auto-connect if we're not already connected
             if (!socket || !socket.connected) {
-              connectButton.click();
-            }
-          }
+        connectButton.click();
+      }
+    }
         }
       })
       .catch((error) => {
