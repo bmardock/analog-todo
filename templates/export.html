@@ -49,6 +49,8 @@
     let isInitiator = false;
     let webrtcConnected = false;
     let offerCreationTimeout = null;
+    let connectedDevices = {}; // Store connected devices: { socketId: { deviceType, socketId } }
+    let myDeviceType = null; // Store this device's type
     generateButton.addEventListener("click", () => {
       const randomCode = `${Math.floor(100 + Math.random() * 900)}-${Math.floor(
         100 + Math.random() * 900
@@ -98,6 +100,23 @@
           console.log("set connection id");
           setAppSetting("connect_id", code);
 
+          // Detect and store this device's type
+          myDeviceType = detectDeviceType();
+          console.log("Device type detected:", myDeviceType);
+
+          // Emit device info to other devices
+          socket.emit("deviceInfo", {
+            deviceType: myDeviceType,
+            socketId: socket.id
+          });
+
+          // Store this device in connectedDevices
+          connectedDevices[socket.id] = {
+            deviceType: myDeviceType,
+            socketId: socket.id
+          };
+          updateDeviceListDisplay();
+
           // Determine if this device is the initiator (first to connect)
           // We'll use a simple approach: first device to connect becomes initiator
           socket.emit("checkInitiator");
@@ -119,14 +138,34 @@
             socket = null;
           }
         });
+        socket.on("deviceInfo", (deviceInfo) => {
+          console.log("Received device info:", deviceInfo);
+          if (deviceInfo && deviceInfo.socketId && deviceInfo.deviceType) {
+            // Store device info
+            connectedDevices[deviceInfo.socketId] = {
+              deviceType: deviceInfo.deviceType,
+              socketId: deviceInfo.socketId
+            };
+            updateDeviceListDisplay();
+          }
+        });
+
         socket.on("userCount", (count) => {
-          let userMsg = "";
           if (count > 1) {
-            statusMessage.innerHTML = `Connected with ${
-              count - 1
-            } other device${
-              count - 1 === 1 ? "" : "s"
-            }.<br>Establishing peer connection...`;
+            const otherDevices = Object.values(connectedDevices).filter(device => device.socketId !== socket?.id);
+            const deviceTypes = otherDevices.map(device => device.deviceType);
+            const uniqueTypes = [...new Set(deviceTypes)];
+            
+            if (uniqueTypes.length > 0) {
+              statusMessage.innerHTML = `Connected with ${uniqueTypes.join(", ")}.<br>Establishing peer connection...`;
+            } else {
+              statusMessage.innerHTML = `Connected with ${
+                count - 1
+              } other device${
+                count - 1 === 1 ? "" : "s"
+              }.<br>Establishing peer connection...`;
+            }
+            
             // Start WebRTC connection process when both devices are connected
             if (count === 2 && !webrtcConnected && !peerConnection && !offerCreationTimeout) {
               // Use socket ID as tiebreaker for deterministic initiator selection
@@ -154,10 +193,13 @@
             }
           } else {
             statusMessage.innerHTML = "Waiting for another device to connect…";
-          }
-          const userCountEl = document.getElementById("userCount");
-          if (userCountEl) {
-            userCountEl.textContent = userMsg;
+            // Clean up disconnected devices when count decreases
+            Object.keys(connectedDevices).forEach(socketId => {
+              if (socketId !== socket?.id) {
+                delete connectedDevices[socketId];
+              }
+            });
+            updateDeviceListDisplay();
           }
         });
 
@@ -199,6 +241,16 @@
             if (signalData.type === "offer") {
               // If we receive an offer, we're definitely the responder (regardless of current state)
               msg("Received WebRTC offer");
+              
+              // Store device info from WebRTC signal
+              if (signalData.deviceType && signalData.fromSocketId) {
+                connectedDevices[signalData.fromSocketId] = {
+                  deviceType: signalData.deviceType,
+                  socketId: signalData.fromSocketId
+                };
+                updateDeviceListDisplay();
+              }
+              
               // Cancel any pending offer creation
               if (offerCreationTimeout) {
                 console.log("Cancelling pending offer creation - received offer from other device");
@@ -218,6 +270,16 @@
               // If we received an offer first, we're the responder and should ignore answers
               if (isInitiator && peerConnection && peerConnection.localDescription && peerConnection.localDescription.type === "offer") {
                 msg("Received WebRTC answer");
+                
+                // Store device info from WebRTC signal
+                if (signalData.deviceType && signalData.fromSocketId) {
+                  connectedDevices[signalData.fromSocketId] = {
+                    deviceType: signalData.deviceType,
+                    socketId: signalData.fromSocketId
+                  };
+                  updateDeviceListDisplay();
+                }
+                
                 await handleWebRTCAnswer(signalData.answer);
               } else {
                 console.log("Ignoring answer - we're the responder, not the initiator");
@@ -226,6 +288,16 @@
               iceCandidatesReceived++;
               msg(`Received ICE candidate ${iceCandidatesReceived}`);
               console.log(`Received ICE candidate ${iceCandidatesReceived}:`, signalData.candidate);
+              
+              // Store device info from WebRTC signal (if not already stored)
+              if (signalData.deviceType && signalData.fromSocketId && !connectedDevices[signalData.fromSocketId]) {
+                connectedDevices[signalData.fromSocketId] = {
+                  deviceType: signalData.deviceType,
+                  socketId: signalData.fromSocketId
+                };
+                updateDeviceListDisplay();
+              }
+              
               if (peerConnection) {
                 try {
                   if (peerConnection.remoteDescription) {
@@ -259,6 +331,31 @@
       let iceCandidatesReceived = 0;
       let iceCandidatesSent = 0;
 
+    // Device type detection
+    function detectDeviceType() {
+      const ua = navigator.userAgent.toLowerCase();
+      if (/tablet|ipad|playbook|silk/i.test(ua)) return "Tablet";
+      if (/mobile|iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/i.test(ua)) return "Mobile";
+      return "Desktop";
+    }
+
+    // Update device list display
+    function updateDeviceListDisplay() {
+      const userCountEl = document.getElementById("userCount");
+      if (!userCountEl) return;
+
+      const otherDevices = Object.values(connectedDevices).filter(device => device.socketId !== socket?.id);
+      
+      if (otherDevices.length === 0) {
+        userCountEl.textContent = "";
+        return;
+      }
+
+      const deviceTypes = otherDevices.map(device => device.deviceType);
+      const uniqueTypes = [...new Set(deviceTypes)];
+      userCountEl.textContent = `Connected with: ${uniqueTypes.join(", ")}`;
+    }
+
     function createWebRTCOffer() {
       msg("Creating WebRTC offer...");
       statusMessage.innerHTML = "Establishing peer connection...";
@@ -282,6 +379,7 @@
                 type: "ice-candidate",
                 candidate: event.candidate,
                 fromSocketId: socket.id,
+                deviceType: myDeviceType,
               }
             }));
           } else {
@@ -331,6 +429,7 @@
             type: "offer",
             offer: peerConnection.localDescription,
             fromSocketId: socket.id,
+            deviceType: myDeviceType,
           }
         }));
         msg("WebRTC offer sent");
@@ -377,10 +476,15 @@
         if (event.candidate) {
           iceCandidatesSent++;
           console.log(`Sending ICE candidate ${iceCandidatesSent}:`, event.candidate);
-          socket.emit("webrtc-signal", {
-            type: "ice-candidate",
-            candidate: event.candidate,
-          });
+          // Send via sync event (wrapped in special format) to match other WebRTC signals
+          socket.emit("sync", JSON.stringify({
+            _webrtcSignal: {
+              type: "ice-candidate",
+              candidate: event.candidate,
+              fromSocketId: socket.id,
+              deviceType: myDeviceType,
+            }
+          }));
         } else {
           console.log("ICE candidate gathering complete");
         }
@@ -416,6 +520,7 @@
             type: "answer",
             answer: peerConnection.localDescription,
             fromSocketId: socket.id,
+            deviceType: myDeviceType,
           }
         }));
         msg("WebRTC answer sent");
@@ -484,6 +589,9 @@
         msg("Data channel closed");
         webrtcConnected = false;
         statusMessage.innerHTML = "Connection closed";
+        // Clear connected devices when WebRTC closes
+        connectedDevices = {};
+        updateDeviceListDisplay();
       };
     }
 
@@ -589,8 +697,13 @@
         socket = null;
       }
 
+      // Clear connected devices
+      connectedDevices = {};
+      updateDeviceListDisplay();
+
       webrtcConnected = false;
       isInitiator = false;
+      myDeviceType = null;
     }
 
     // Register cleanup with global route cleanup system
