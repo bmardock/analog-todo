@@ -107,13 +107,13 @@
           // Emit device info to other devices
           socket.emit("deviceInfo", {
             deviceType: myDeviceType,
-            socketId: socket.id
+            socketId: socket.id,
           });
 
           // Store this device in connectedDevices
           connectedDevices[socket.id] = {
             deviceType: myDeviceType,
-            socketId: socket.id
+            socketId: socket.id,
           };
           updateDeviceListDisplay();
 
@@ -124,10 +124,6 @@
 
         socket.on("connect_error", (error) => {
           console.error("Socket.io connection error:", error);
-          msg(
-            "Connection error: " +
-              (error.message || "Unable to connect to server")
-          );
           statusMessage.innerHTML =
             "Connection failed. This may be due to CORS restrictions when running locally.<br>Try using the hosted version or configure the server to allow localhost.";
           container.classList.remove("connected");
@@ -144,7 +140,7 @@
             // Store device info
             connectedDevices[deviceInfo.socketId] = {
               deviceType: deviceInfo.deviceType,
-              socketId: deviceInfo.socketId
+              socketId: deviceInfo.socketId,
             };
             updateDeviceListDisplay();
           }
@@ -152,33 +148,46 @@
 
         socket.on("userCount", (count) => {
           if (count > 1) {
-            const otherDevices = Object.values(connectedDevices).filter(device => device.socketId !== socket?.id);
-            const deviceTypes = otherDevices.map(device => device.deviceType);
+            const otherDevices = Object.values(connectedDevices).filter(
+              (device) => device.socketId !== socket?.id
+            );
+            const deviceTypes = otherDevices.map((device) => device.deviceType);
             const uniqueTypes = [...new Set(deviceTypes)];
-            
+
             if (uniqueTypes.length > 0) {
-              statusMessage.innerHTML = `Connected with ${uniqueTypes.join(", ")}.<br>Establishing peer connection...`;
+              statusMessage.innerHTML = `Connected with ${uniqueTypes.join(
+                ", "
+              )}.<br>Connecting...`;
             } else {
               statusMessage.innerHTML = `Connected with ${
                 count - 1
-              } other device${
-                count - 1 === 1 ? "" : "s"
-              }.<br>Establishing peer connection...`;
+              } other device${count - 1 === 1 ? "" : "s"}.<br>Connecting...`;
             }
-            
+
             // Start WebRTC connection process when both devices are connected
-            if (count === 2 && !webrtcConnected && !peerConnection && !offerCreationTimeout) {
+            if (
+              count === 2 &&
+              !webrtcConnected &&
+              !peerConnection &&
+              !offerCreationTimeout
+            ) {
               // Use socket ID as tiebreaker for deterministic initiator selection
               // Device with "smaller" socket ID becomes initiator
               const socketId = socket.id;
               const delay = Math.random() * 800 + 200; // 200-1000ms random delay
-              
+
               // Add a small deterministic component based on socket ID
-              const idHash = socketId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-              const deterministicDelay = (idHash % 500); // 0-500ms based on socket ID
+              const idHash = socketId
+                .split("")
+                .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+              const deterministicDelay = idHash % 500; // 0-500ms based on socket ID
               const totalDelay = delay + deterministicDelay;
-              
-              console.log(`Scheduling offer creation in ${totalDelay.toFixed(0)}ms (socket ID: ${socketId.substring(0, 8)}...)`);
+
+              console.log(
+                `Scheduling offer creation in ${totalDelay.toFixed(
+                  0
+                )}ms (socket ID: ${socketId.substring(0, 8)}...)`
+              );
               offerCreationTimeout = setTimeout(() => {
                 // Only create offer if we still haven't received one
                 if (!peerConnection && !webrtcConnected && !isInitiator) {
@@ -186,7 +195,9 @@
                   console.log("This device is the initiator (creating offer)");
                   createWebRTCOffer();
                 } else {
-                  console.log("Skipping offer creation - already have connection or received offer");
+                  console.log(
+                    "Skipping offer creation - already have connection or received offer"
+                  );
                 }
                 offerCreationTimeout = null;
               }, totalDelay);
@@ -194,7 +205,7 @@
           } else {
             statusMessage.innerHTML = "Waiting for another device to connect…";
             // Clean up disconnected devices when count decreases
-            Object.keys(connectedDevices).forEach(socketId => {
+            Object.keys(connectedDevices).forEach((socketId) => {
               if (socketId !== socket?.id) {
                 delete connectedDevices[socketId];
               }
@@ -218,20 +229,25 @@
             let signalData = null;
             try {
               // Try to parse as WebRTC signal wrapper
-              const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+              const parsed = typeof data === "string" ? JSON.parse(data) : data;
               if (parsed && parsed._webrtcSignal) {
                 signalData = parsed._webrtcSignal;
-                console.log("Received WebRTC signal via sync:", signalData?.type, "from:", signalData?.fromSocketId || "unknown");
+                console.log(
+                  "Received WebRTC signal via sync:",
+                  signalData?.type,
+                  "from:",
+                  signalData?.fromSocketId || "unknown"
+                );
               }
             } catch (e) {
               // Not a WebRTC signal, treat as regular sync data (fallback)
-              msg("sync request (fallback)");
+              console.log("sync request (fallback)");
               const jsonData = decompressData(decodeURIComponent(data));
-          msg("Decompressed JSON Data:");
-          console.log(jsonData);
-          importData(jsonData).then(() => {
-            msg("Import completed!");
-          });
+              console.log("Decompressed JSON Data:", jsonData);
+              statusMessage.innerHTML = "Syncing data...";
+              importData(jsonData).then(() => {
+                statusMessage.innerHTML = "Sync completed!";
+              });
               return;
             }
 
@@ -240,25 +256,30 @@
 
             if (signalData.type === "offer") {
               // If we receive an offer, we're definitely the responder (regardless of current state)
-              msg("Received WebRTC offer");
-              
+              // Don't show technical message - statusMessage already shows "Establishing peer connection..."
+              console.log("Received WebRTC offer");
+
               // Store device info from WebRTC signal
               if (signalData.deviceType && signalData.fromSocketId) {
                 connectedDevices[signalData.fromSocketId] = {
                   deviceType: signalData.deviceType,
-                  socketId: signalData.fromSocketId
+                  socketId: signalData.fromSocketId,
                 };
                 updateDeviceListDisplay();
               }
-              
+
               // Cancel any pending offer creation
               if (offerCreationTimeout) {
-                console.log("Cancelling pending offer creation - received offer from other device");
+                console.log(
+                  "Cancelling pending offer creation - received offer from other device"
+                );
                 clearTimeout(offerCreationTimeout);
                 offerCreationTimeout = null;
               }
               if (peerConnection) {
-                console.log("Already have peer connection, closing it to accept new offer");
+                console.log(
+                  "Already have peer connection, closing it to accept new offer"
+                );
                 peerConnection.close();
                 peerConnection = null;
               }
@@ -268,36 +289,51 @@
             } else if (signalData.type === "answer") {
               // Only handle answer if we're the initiator (we sent an offer)
               // If we received an offer first, we're the responder and should ignore answers
-              if (isInitiator && peerConnection && peerConnection.localDescription && peerConnection.localDescription.type === "offer") {
-                msg("Received WebRTC answer");
-                
+              if (
+                isInitiator &&
+                peerConnection &&
+                peerConnection.localDescription &&
+                peerConnection.localDescription.type === "offer"
+              ) {
+                // Don't show technical message - statusMessage already shows connection status
+                console.log("Received WebRTC answer");
+
                 // Store device info from WebRTC signal
                 if (signalData.deviceType && signalData.fromSocketId) {
                   connectedDevices[signalData.fromSocketId] = {
                     deviceType: signalData.deviceType,
-                    socketId: signalData.fromSocketId
+                    socketId: signalData.fromSocketId,
                   };
                   updateDeviceListDisplay();
                 }
-                
+
                 await handleWebRTCAnswer(signalData.answer);
               } else {
-                console.log("Ignoring answer - we're the responder, not the initiator");
+                console.log(
+                  "Ignoring answer - we're the responder, not the initiator"
+                );
               }
             } else if (signalData.type === "ice-candidate") {
               iceCandidatesReceived++;
-              msg(`Received ICE candidate ${iceCandidatesReceived}`);
-              console.log(`Received ICE candidate ${iceCandidatesReceived}:`, signalData.candidate);
-              
+              // Don't show technical message to users - just log for debugging
+              console.log(
+                `Received ICE candidate ${iceCandidatesReceived}:`,
+                signalData.candidate
+              );
+
               // Store device info from WebRTC signal (if not already stored)
-              if (signalData.deviceType && signalData.fromSocketId && !connectedDevices[signalData.fromSocketId]) {
+              if (
+                signalData.deviceType &&
+                signalData.fromSocketId &&
+                !connectedDevices[signalData.fromSocketId]
+              ) {
                 connectedDevices[signalData.fromSocketId] = {
                   deviceType: signalData.deviceType,
-                  socketId: signalData.fromSocketId
+                  socketId: signalData.fromSocketId,
                 };
                 updateDeviceListDisplay();
               }
-              
+
               if (peerConnection) {
                 try {
                   if (peerConnection.remoteDescription) {
@@ -306,7 +342,9 @@
                     );
                   } else {
                     // Store candidate for later if remote description isn't set yet
-                    console.log("Storing ICE candidate until remote description is set");
+                    console.log(
+                      "Storing ICE candidate until remote description is set"
+                    );
                     // The candidate will be added when remote description is set
                   }
                 } catch (error) {
@@ -317,7 +355,12 @@
                 console.log("Peer connection not created yet");
               }
             } else {
-              console.log("Ignored signal:", signalData?.type, "isInitiator:", isInitiator);
+              console.log(
+                "Ignored signal:",
+                signalData?.type,
+                "isInitiator:",
+                isInitiator
+              );
             }
           } catch (error) {
             console.error("Error handling sync/signal:", error);
@@ -326,16 +369,21 @@
         });
       }
     });
-      // WebRTC functions
-      let webrtcTimeout = null;
-      let iceCandidatesReceived = 0;
-      let iceCandidatesSent = 0;
+    // WebRTC functions
+    let webrtcTimeout = null;
+    let iceCandidatesReceived = 0;
+    let iceCandidatesSent = 0;
 
     // Device type detection
     function detectDeviceType() {
       const ua = navigator.userAgent.toLowerCase();
       if (/tablet|ipad|playbook|silk/i.test(ua)) return "Tablet";
-      if (/mobile|iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/i.test(ua)) return "Mobile";
+      if (
+        /mobile|iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/i.test(
+          ua
+        )
+      )
+        return "Mobile";
       return "Desktop";
     }
 
@@ -344,48 +392,56 @@
       const userCountEl = document.getElementById("userCount");
       if (!userCountEl) return;
 
-      const otherDevices = Object.values(connectedDevices).filter(device => device.socketId !== socket?.id);
-      
+      const otherDevices = Object.values(connectedDevices).filter(
+        (device) => device.socketId !== socket?.id
+      );
+
       if (otherDevices.length === 0) {
         userCountEl.textContent = "";
         return;
       }
 
-      const deviceTypes = otherDevices.map(device => device.deviceType);
+      const deviceTypes = otherDevices.map((device) => device.deviceType);
       const uniqueTypes = [...new Set(deviceTypes)];
       userCountEl.textContent = `Connected with: ${uniqueTypes.join(", ")}`;
     }
 
     function createWebRTCOffer() {
-      msg("Creating WebRTC offer...");
-      statusMessage.innerHTML = "Establishing peer connection...";
+      console.log("Creating WebRTC offer...");
+      statusMessage.innerHTML = "Connecting...";
 
       peerConnection = new RTCPeerConnection({
         iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
       });
 
-        // Create data channel
-        dataChannel = peerConnection.createDataChannel("sync", { ordered: true });
-        setupDataChannel(dataChannel);
+      // Create data channel
+      dataChannel = peerConnection.createDataChannel("sync", { ordered: true });
+      setupDataChannel(dataChannel);
 
-        // Handle ICE candidates
-        peerConnection.onicecandidate = (event) => {
-          if (event.candidate) {
-            iceCandidatesSent++;
-            console.log(`Sending ICE candidate ${iceCandidatesSent}:`, event.candidate);
-            // Send WebRTC signal via sync event (wrapped in special format)
-            socket.emit("sync", JSON.stringify({
+      // Handle ICE candidates
+      peerConnection.onicecandidate = (event) => {
+        if (event.candidate) {
+          iceCandidatesSent++;
+          console.log(
+            `Sending ICE candidate ${iceCandidatesSent}:`,
+            event.candidate
+          );
+          // Send WebRTC signal via sync event (wrapped in special format)
+          socket.emit(
+            "sync",
+            JSON.stringify({
               _webrtcSignal: {
                 type: "ice-candidate",
                 candidate: event.candidate,
                 fromSocketId: socket.id,
                 deviceType: myDeviceType,
-              }
-            }));
-          } else {
-            console.log("ICE candidate gathering complete");
-          }
-        };
+              },
+            })
+          );
+        } else {
+          console.log("ICE candidate gathering complete");
+        }
+      };
 
       peerConnection.onconnectionstatechange = () => {
         window.log("WebRTC connection state:", peerConnection.connectionState);
@@ -398,8 +454,8 @@
           peerConnection.connectionState === "failed" ||
           peerConnection.connectionState === "disconnected"
         ) {
-          msg("WebRTC connection failed, falling back to Socket.io");
-          statusMessage.innerHTML = "Connection failed. Using fallback method.";
+          statusMessage.innerHTML =
+            "Connection failed. Trying alternative method...";
           webrtcConnected = false;
           fallbackToSocketIOSync();
         }
@@ -408,10 +464,12 @@
       // Set timeout for WebRTC connection (15 seconds - increased for slower networks)
       webrtcTimeout = setTimeout(() => {
         if (!webrtcConnected) {
-          msg("WebRTC connection timeout, falling back to Socket.io");
-          console.log("WebRTC timeout - connection state:", peerConnection?.connectionState);
+          console.log(
+            "WebRTC timeout - connection state:",
+            peerConnection?.connectionState
+          );
           statusMessage.innerHTML =
-            "Connection timeout. Using fallback method.";
+            "Connection timeout. Trying alternative method...";
           fallbackToSocketIOSync();
         }
       }, 15000);
@@ -423,21 +481,29 @@
           return peerConnection.setLocalDescription(offer);
         })
         .then(() => {
-        // Send WebRTC offer via sync event (wrapped in special format)
-        socket.emit("sync", JSON.stringify({
-          _webrtcSignal: {
-            type: "offer",
-            offer: peerConnection.localDescription,
-            fromSocketId: socket.id,
-            deviceType: myDeviceType,
-          }
-        }));
-        msg("WebRTC offer sent");
-        console.log("WebRTC offer sent via sync (socket ID:", socket.id, "):", peerConnection.localDescription);
+          // Send WebRTC offer via sync event (wrapped in special format)
+          socket.emit(
+            "sync",
+            JSON.stringify({
+              _webrtcSignal: {
+                type: "offer",
+                offer: peerConnection.localDescription,
+                fromSocketId: socket.id,
+                deviceType: myDeviceType,
+              },
+            })
+          );
+          console.log(
+            "WebRTC offer sent via sync (socket ID:",
+            socket.id,
+            "):",
+            peerConnection.localDescription
+          );
         })
         .catch((error) => {
           window.error("Error creating WebRTC offer:", error);
-          msg("Error creating offer, using fallback");
+          statusMessage.innerHTML =
+            "Connection error. Trying alternative method...";
           fallbackToSocketIOSync();
         });
     }
@@ -458,8 +524,8 @@
     async function handleWebRTCOffer(offer) {
       if (webrtcConnected || !offer) return;
 
-      msg("Received WebRTC offer");
-      statusMessage.innerHTML = "Establishing peer connection...";
+      console.log("Received WebRTC offer");
+      statusMessage.innerHTML = "Connecting...";
 
       peerConnection = new RTCPeerConnection({
         iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
@@ -467,7 +533,7 @@
 
       // Handle incoming data channel
       peerConnection.ondatachannel = (event) => {
-        msg("Data channel received");
+        console.log("Data channel received");
         setupDataChannel(event.channel);
       };
 
@@ -475,16 +541,22 @@
       peerConnection.onicecandidate = (event) => {
         if (event.candidate) {
           iceCandidatesSent++;
-          console.log(`Sending ICE candidate ${iceCandidatesSent}:`, event.candidate);
+          console.log(
+            `Sending ICE candidate ${iceCandidatesSent}:`,
+            event.candidate
+          );
           // Send via sync event (wrapped in special format) to match other WebRTC signals
-          socket.emit("sync", JSON.stringify({
-            _webrtcSignal: {
-              type: "ice-candidate",
-              candidate: event.candidate,
-              fromSocketId: socket.id,
-              deviceType: myDeviceType,
-            }
-          }));
+          socket.emit(
+            "sync",
+            JSON.stringify({
+              _webrtcSignal: {
+                type: "ice-candidate",
+                candidate: event.candidate,
+                fromSocketId: socket.id,
+                deviceType: myDeviceType,
+              },
+            })
+          );
         } else {
           console.log("ICE candidate gathering complete");
         }
@@ -501,8 +573,8 @@
           peerConnection.connectionState === "failed" ||
           peerConnection.connectionState === "disconnected"
         ) {
-          msg("WebRTC connection failed, falling back to Socket.io");
-          statusMessage.innerHTML = "Connection failed. Using fallback method.";
+          statusMessage.innerHTML =
+            "Connection failed. Trying alternative method...";
           webrtcConnected = false;
           fallbackToSocketIOSync();
         }
@@ -515,19 +587,27 @@
         const answer = await peerConnection.createAnswer();
         await peerConnection.setLocalDescription(answer);
         // Send WebRTC answer via sync event (wrapped in special format)
-        socket.emit("sync", JSON.stringify({
-          _webrtcSignal: {
-            type: "answer",
-            answer: peerConnection.localDescription,
-            fromSocketId: socket.id,
-            deviceType: myDeviceType,
-          }
-        }));
-        msg("WebRTC answer sent");
-        console.log("WebRTC answer sent via sync (socket ID:", socket.id, "):", peerConnection.localDescription);
+        socket.emit(
+          "sync",
+          JSON.stringify({
+            _webrtcSignal: {
+              type: "answer",
+              answer: peerConnection.localDescription,
+              fromSocketId: socket.id,
+              deviceType: myDeviceType,
+            },
+          })
+        );
+        console.log(
+          "WebRTC answer sent via sync (socket ID:",
+          socket.id,
+          "):",
+          peerConnection.localDescription
+        );
       } catch (error) {
         window.error("Error handling WebRTC offer:", error);
-        msg("Error handling offer, using fallback");
+        statusMessage.innerHTML =
+          "Connection error. Trying alternative method...";
         fallbackToSocketIOSync();
       }
     }
@@ -535,29 +615,30 @@
     async function handleWebRTCAnswer(answer) {
       if (webrtcConnected || !answer || !peerConnection) return;
 
-      msg("Received WebRTC answer");
+      console.log("Received WebRTC answer");
       try {
         await peerConnection.setRemoteDescription(
           new RTCSessionDescription(answer)
         );
-        msg("WebRTC connection established");
+        console.log("WebRTC connection established");
       } catch (error) {
         window.error("Error handling WebRTC answer:", error);
-        msg("Error handling answer, using fallback");
+        statusMessage.innerHTML =
+          "Connection error. Trying alternative method...";
         fallbackToSocketIOSync();
       }
     }
 
     function setupDataChannel(channel) {
       channel.onopen = () => {
-        msg("WebRTC data channel opened - starting sync");
+        console.log("WebRTC data channel opened - starting sync");
         webrtcConnected = true;
         statusMessage.innerHTML = "Syncing data...";
 
         // Disconnect from Socket.io (no longer needed)
         if (socket) {
           socket.disconnect();
-          msg("Disconnected from signaling server");
+          console.log("Disconnected from signaling server");
         }
 
         // Auto-sync: both devices send their data
@@ -568,25 +649,23 @@
         try {
           const compressedData = event.data;
           const jsonData = decompressData(compressedData);
-          msg("Received data via WebRTC");
+          console.log("Received data via WebRTC");
           await importData(jsonData);
-          msg("Import completed!");
           statusMessage.innerHTML = "Sync completed!";
         } catch (error) {
           window.error("Error processing received data:", error);
-          msg(`Error: ${error.message}`);
           statusMessage.innerHTML = "Sync error occurred";
         }
       };
 
       channel.onerror = (error) => {
         window.error("Data channel error:", error);
-        msg("Data channel error");
+        statusMessage.innerHTML = "Sync error occurred";
         webrtcConnected = false;
       };
 
       channel.onclose = () => {
-        msg("Data channel closed");
+        console.log("Data channel closed");
         webrtcConnected = false;
         statusMessage.innerHTML = "Connection closed";
         // Clear connected devices when WebRTC closes
@@ -600,10 +679,10 @@
         const jsonData = await exportData();
         const compressedData = compressData(jsonData);
         channel.send(compressedData);
-        msg("Sent data via WebRTC");
+        console.log("Sent data via WebRTC");
       } catch (error) {
         window.error("Error during sync:", error);
-        msg(`Sync error: ${error.message}`);
+        statusMessage.innerHTML = "Sync error occurred";
       }
     }
 
@@ -612,12 +691,12 @@
       if (webrtcConnected && dataChannel) {
         performBidirectionalSync(dataChannel);
       } else {
-        msg("sending export (fallback)");
-      exportData().then((jsonData) => {
-        const compressedData = compressData(jsonData);
-        const encodedData = encodeURIComponent(compressedData);
-        socket.emit("sync", encodedData);
-      });
+        statusMessage.innerHTML = "Sending data...";
+        exportData().then((jsonData) => {
+          const compressedData = compressData(jsonData);
+          const encodedData = encodeURIComponent(compressedData);
+          socket.emit("sync", encodedData);
+        });
       }
     });
 
@@ -649,10 +728,10 @@
     //manually import
     document.getElementById("saveData").addEventListener("click", () => {
       jsonData = document.getElementById("json").value;
-      msg("saveData");
-      msg(jsonData);
+      console.log("Manual import triggered");
+      statusMessage.innerHTML = "Importing data...";
       importData(jsonData).then(() => {
-        msg("Import completed!");
+        statusMessage.innerHTML = "Import completed!";
       });
     });
 
@@ -716,17 +795,17 @@
     // Load connect_id from IndexedDB and auto-connect
     getAppSetting("connect_id")
       .then((connect_id) => {
-    if (connect_id) {
-      console.log("connect_id set:", connect_id);
-      codeInput.value = connect_id;
-      const isValidCode = /^\d{3}-\d{3}$/.test(codeInput.value);
-      if (isValidCode) {
-        container.classList.toggle("validCode", isValidCode);
+        if (connect_id) {
+          console.log("connect_id set:", connect_id);
+          codeInput.value = connect_id;
+          const isValidCode = /^\d{3}-\d{3}$/.test(codeInput.value);
+          if (isValidCode) {
+            container.classList.toggle("validCode", isValidCode);
             // Only auto-connect if we're not already connected
             if (!socket || !socket.connected) {
-        connectButton.click();
-      }
-    }
+              connectButton.click();
+            }
+          }
         }
       })
       .catch((error) => {

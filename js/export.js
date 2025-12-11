@@ -135,14 +135,14 @@ async function importData(jsonData) {
     try {
         data = JSON.parse(jsonData);
     } catch (error) {
-        msg(`Error: Invalid JSON format - ${error.message}`);
+        debugError(`Error: Invalid JSON format - ${error.message}`);
         throw new Error('Invalid JSON format');
     }
     
     // Validate overall data structure
     const structureValidation = validateDataStructure(data);
     if (!structureValidation.valid) {
-        msg(`Error: ${structureValidation.error}`);
+        debugError(`Error: ${structureValidation.error}`);
         throw new Error(structureValidation.error);
     }
     
@@ -150,7 +150,7 @@ async function importData(jsonData) {
 
     const mergeAndSave = async (type, newData) => {
         if (!Array.isArray(newData)) {
-            msg(`Error: ${type} data must be an array`);
+            debugError(`Error: ${type} data must be an array`);
             return;
         }
         
@@ -167,13 +167,11 @@ async function importData(jsonData) {
             const itemValidation = validateItem(newItem, type);
             if (!itemValidation.valid) {
                 debugError(`Error: ${itemValidation.error} in ${type} item:`, newItem);
-                msg(`Error: ${itemValidation.error} in ${type}`);
                 continue;
             }
             
             if (!newItem[identifierKey]) {
                 debugError(`Error: Missing required key (${identifierKey}) in new ${type} item:`, newItem);
-                msg(`Error: Missing key (${identifierKey}) in ${type}`);
                 continue;
             }
 
@@ -188,26 +186,26 @@ async function importData(jsonData) {
                     // Newer version wins - replace existing
                     try {
                         await saveToStore(type, newItem);
-                        msg(`Updated: ${type} entry for ${identifierKey}: ${newItem[identifierKey]} (newer version)`);
+                        debugLog(`Updated: ${type} entry for ${identifierKey}: ${newItem[identifierKey]} (newer version)`);
                     } catch (error) {
                         debugError(`Failed to update ${type} item:`, newItem, error);
-                        msg(`Error updating ${type} entry for ${identifierKey}: ${newItem[identifierKey]}`);
+                        debugError(`Error updating ${type} entry for ${identifierKey}: ${newItem[identifierKey]}`);
                     }
                 } else if (newTime === existingTime) {
                     // Same timestamp - skip (already have this version)
-                    msg(`Skipped: Duplicate ${type} entry for ${identifierKey}: ${newItem[identifierKey]} (same version)`);
+                    debugLog(`Skipped: Duplicate ${type} entry for ${identifierKey}: ${newItem[identifierKey]} (same version)`);
                 } else {
                     // Existing is newer - keep existing
-                    msg(`Skipped: ${type} entry for ${identifierKey}: ${newItem[identifierKey]} (existing is newer)`);
+                    debugLog(`Skipped: ${type} entry for ${identifierKey}: ${newItem[identifierKey]} (existing is newer)`);
                 }
             } else {
                 // New item - add it
                 try {
                     await saveToStore(type, newItem);
-                    msg(`Added: New ${type} entry for ${identifierKey}: ${newItem[identifierKey]}`);
+                    debugLog(`Added: New ${type} entry for ${identifierKey}: ${newItem[identifierKey]}`);
                 } catch (error) {
                     debugError(`Failed to save ${type} item:`, newItem, error);
-                    msg(`Error saving ${type} entry for ${identifierKey}: ${newItem[identifierKey]}`);
+                    debugError(`Error saving ${type} entry for ${identifierKey}: ${newItem[identifierKey]}`);
                 }
             }
         }
